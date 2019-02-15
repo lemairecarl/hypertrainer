@@ -13,7 +13,7 @@ yaml = YAML()
 
 CONFIGS_PATH = Path(os.environ['EM_CONFIGS_PATH'])
 
-Run = namedtuple('Run', ['name', 'metrics'])
+Task = namedtuple('Task', ['name', 'metrics'])
 Metric = namedtuple('Metric', ['name', 'data'])
 
 
@@ -35,30 +35,30 @@ class Server(object):
         # TODO other metrics
         return metrics
     
-    def get_runs(self):
+    def get_tasks(self):
         """
-        
-        :return: a list of Run objects.
+        TODO documentation
+        :return: a list of Task objects.
         """
         
         # Iterate on yaml files
-        runs = []
+        tasks = []
         for config_file_path in CONFIGS_PATH.glob('*.yaml'):
             config_file_path = Path(config_file_path)
             config_data = yaml.load(config_file_path)
             output_path = Path(get_item_at_path(config_data, 'training.output_path'))
-            runs.append(
-                Run(config_file_path.stem, self.get_metrics(output_path))
+            tasks.append(
+                Task(config_file_path.stem, self.get_metrics(output_path))
             )
-        return runs
+        return tasks
     
     def main_loop(self):
         while True:
-            for r in self.get_runs():
-                for m in r.metrics:
-                    self.vis.line(Y=m.data[:, 1], X=m.data[:, 0], win=m.name, env=r.name, opts=dict(title=m.name))
+            for task in self.get_tasks():
+                for m in task.metrics:
+                    self.vis.line(Y=m.data[:, 1], X=m.data[:, 0], win=m.name, env=task.name, opts=dict(title=m.name))
             
-            time.sleep(60)
+            time.sleep(2 * 60)
     
     
 if __name__ == '__main__':
