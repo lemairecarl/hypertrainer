@@ -20,6 +20,9 @@ Metric = namedtuple('Metric', ['name', 'data'])
 class Server(object):
     def __init__(self):
         self.vis = visdom.Visdom()
+        
+        if not self.vis.check_connection():
+            raise RuntimeError('A visdom server must be running.')
     
     @staticmethod
     def get_metrics(output_path: Path):
@@ -53,6 +56,7 @@ class Server(object):
         return tasks
     
     def main_loop(self):
+        print('Experiment Manager Server is running.')
         while True:
             for task in self.get_tasks():
                 for m in task.metrics:
