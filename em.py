@@ -31,7 +31,7 @@ def generate_random_value(p):
 
 def make_child_config(yaml_data):
     child = deepcopy(yaml_data)
-    child['hpsearch']['is_child'] = True
+    child['hpsearch'].insert(0, 'is_child', True, comment='This YAML was generated using the config below')
     return child
 
 
@@ -41,8 +41,8 @@ def generate_hpsearch():
     parent_yaml = yaml.load(parent_file_path)
     hpsearch_config = parent_yaml['hpsearch']
     
-    if hpsearch_config['is_child']:
-        raise RuntimeError('This YAML config is itself a child config for an hyperparameter search.')
+    if hpsearch_config.get('is_child', False):
+        raise RuntimeError('This YAML is itself a child config generated for an hyperparameter search.')
     
     assert hpsearch_config['type'] == 'random_uniform'
     
