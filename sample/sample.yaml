@@ -29,7 +29,7 @@ sample:
 # Training parameters; used in train_model.py ----------------------
 
 training:
-  output_path: data/dummy_output
+  output_path: sample/sample_output
   num_trn_samples: 4960
   num_val_samples: 2208
   batch_size: 32
