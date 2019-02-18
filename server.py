@@ -14,7 +14,7 @@ yaml = YAML()
 
 CONFIGS_PATH = Path(os.environ['EM_CONFIGS_PATH'])
 
-Task = namedtuple('Task', ['name', 'metrics'])
+Task = namedtuple('Task', ['name', 'metrics', 'best_epoch'])
 Metric = namedtuple('Metric', ['name', 'type', 'data'])
 
 
@@ -33,27 +33,29 @@ class Server(object):
         output_path = Path(get_item_at_path(config_data, 'training.output_path'))
         
         # Loss
-        losses = np.loadtxt(str(output_path / 'trn_losses_values.log'), delimiter=' ')
+        losses = pd.read_csv(output_path / 'trn_losses_values.log', sep=' ', header=None, names=['ep', 'val'])
         metrics.append(
-            Metric(name='Loss', type='line', data=losses)
+            Metric(name='Loss', type='line', data=losses.values)
         )
+        best_epoch = losses['val'].idxmin()
+        assert losses['ep'][best_epoch] == best_epoch
         
         # Classwise final score
         all_scores = pd.read_csv(output_path / 'trn_classes_score.log', sep=' ', header=None, names=['ep', 'id', 'val'])
-        scores = all_scores[all_scores['ep'] == all_scores['ep'].max()].copy()
-        # TODO keep best epoch instead of last
+        scores = all_scores[all_scores['ep'] == best_epoch].copy()
         scores['metric'], scores['class_idx'] = scores['id'].str.split('_', 1).str
         for name, val in scores.groupby('metric'):
             metrics.append(
                 Metric(name=name, type='bar', data=val['val'].values)
             )
         
-        return metrics
+        return metrics, best_epoch
     
     def retrieve_task(self, config_file_path):
         config_file_path = Path(config_file_path)
         config_data = yaml.load(config_file_path)
-        return Task(config_file_path.stem, self.get_metrics(config_data))
+        metrics, best_epoch = self.get_metrics(config_data)
+        return Task(config_file_path.stem, metrics, best_epoch)
     
     def refresh_tasks(self):
         """
@@ -77,8 +79,9 @@ class Server(object):
                                       win=m.name, env=task.name, opts=dict(title=m.name))
                     elif m.type == 'bar':
                         rn = [str(i) for i in range(len(m.data))]
+                        title = m.name.capitalize() + ' for epoch ' + str(task.best_epoch)
                         self.vis.bar(m.data,
-                                     win=m.name, env=task.name, opts=dict(title=m.name, rownames=rn))
+                                     win=m.name, env=task.name, opts=dict(title=title, rownames=rn))
             
             time.sleep(2 * 60)
     
