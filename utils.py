@@ -7,9 +7,15 @@ CSS_STYLE_TAG = '<style>' \
                 '</style>'
 
 
-def get_item_at_path(obj, path, sep='.'):
+def get_item_at_path(obj, path, sep='.', default=KeyError):
     """Use this method like this: `get_item_with_path(obj, 'a.b.c')` to get the item `obj['a']['b']['c']`."""
-    return reduce(lambda o, k: o[k], [obj] + path.split(sep))
+    try:
+        return reduce(lambda o, k: o[k], [obj] + path.split(sep))
+    except (IndexError, KeyError):
+        if default is KeyError:
+            raise
+        else:
+            return default
 
 
 def set_item_at_path(obj, path, value, sep='.'):

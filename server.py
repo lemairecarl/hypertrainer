@@ -1,14 +1,13 @@
 import time
 import os
 from pathlib import Path
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
-import numpy as np
 import pandas as pd
 from ruamel_yaml import YAML
 import visdom
 
-from utils import get_item_at_path, make_html_table, make_info_tables
+from utils import get_item_at_path, make_info_tables
 
 yaml = YAML()
 
@@ -25,7 +24,7 @@ class Server(object):
         self.tasks = []
         
         if not self.vis.check_connection():
-            raise RuntimeError('A visdom server must be running.')
+            raise RuntimeError('A visdom server must be running. Please run `visdom` in a terminal.')
     
     @staticmethod
     def get_metrics(config_data):
@@ -63,16 +62,30 @@ class Server(object):
         TODO documentation
         :return: a list of Task objects.
         """
-
+        
         self.tasks.clear()
         # Iterate on yaml files
         for config_file_path in CONFIGS_PATH.glob('*.yaml'):
-            self.tasks.append(self.retrieve_task(config_file_path))
+            task = self.retrieve_task(config_file_path)
+            self.tasks.append(task)
+        
+        # Add suffix to parent configs (problem because of visdom)
+        prefix_map = defaultdict(lambda: (999, None))
+        for task in self.tasks:
+            name_tokens = task.name.split('_')
+            if len(name_tokens) < prefix_map[name_tokens[0]][0]:
+                prefix_map[name_tokens[0]] = (len(name_tokens), task)
+        for n, task in prefix_map.values():
+            modified_task = Task(task.name + '_main', task.config, task.metrics, task.best_epoch)
+            self.tasks.remove(task)
+            self.tasks.append(modified_task)
     
     def show_task_info(self, task):
         info = [(field_path, get_item_at_path(task.config, field_path)) for field_path in INFO_FIELDS]
         hp_params = [x['param'] for x in task.config['hpsearch']['params']]
         hpinfo = [(field_path, get_item_at_path(task.config, field_path)) for field_path in hp_params]
+        if not get_item_at_path(task.config, 'hpsearch.is_child', default=False):
+            hpinfo.insert(0, ('(Parent config)', ''))
         all_info = {'Info': info, 'Hyperparameter search': hpinfo}
         self.vis.text(make_info_tables(all_info), win='info', env=task.name)
     
@@ -96,8 +109,8 @@ class Server(object):
                 self.plot_task_metrics(task)
             
             time.sleep(2 * 60)
-    
-    
+
+
 if __name__ == '__main__':
     s = Server()
     s.main_loop()
