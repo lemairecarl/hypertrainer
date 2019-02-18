@@ -8,13 +8,14 @@ import pandas as pd
 from ruamel_yaml import YAML
 import visdom
 
-from utils import get_item_at_path
+from utils import get_item_at_path, make_html_table, make_info_tables
 
 yaml = YAML()
 
 CONFIGS_PATH = Path(os.environ['EM_CONFIGS_PATH'])
+INFO_FIELDS = ['global.model_name', 'training.output_path', 'training.num_epochs']
 
-Task = namedtuple('Task', ['name', 'metrics', 'best_epoch'])
+Task = namedtuple('Task', ['name', 'config', 'metrics', 'best_epoch'])
 Metric = namedtuple('Metric', ['name', 'type', 'data'])
 
 
@@ -55,7 +56,7 @@ class Server(object):
         config_file_path = Path(config_file_path)
         config_data = yaml.load(config_file_path)
         metrics, best_epoch = self.get_metrics(config_data)
-        return Task(config_file_path.stem, metrics, best_epoch)
+        return Task(config_file_path.stem, config_data, metrics, best_epoch)
     
     def refresh_tasks(self):
         """
@@ -68,20 +69,31 @@ class Server(object):
         for config_file_path in CONFIGS_PATH.glob('*.yaml'):
             self.tasks.append(self.retrieve_task(config_file_path))
     
+    def show_task_info(self, task):
+        info = [(field_path, get_item_at_path(task.config, field_path)) for field_path in INFO_FIELDS]
+        hp_params = [x['param'] for x in task.config['hpsearch']['params']]
+        hpinfo = [(field_path, get_item_at_path(task.config, field_path)) for field_path in hp_params]
+        all_info = {'Info': info, 'Hyperparameter search': hpinfo}
+        self.vis.text(make_info_tables(all_info), win='info', env=task.name)
+    
+    def plot_task_metrics(self, task):
+        for m in task.metrics:
+            if m.type == 'line':
+                self.vis.line(Y=m.data[:, 1], X=m.data[:, 0],
+                              win=m.name, env=task.name, opts=dict(title=m.name))
+            elif m.type == 'bar':
+                rn = [str(i) for i in range(len(m.data))]
+                title = m.name.capitalize() + ' for epoch ' + str(task.best_epoch)
+                self.vis.bar(m.data,
+                             win=m.name, env=task.name, opts=dict(title=title, rownames=rn))
+    
     def main_loop(self):
         print('Experiment Manager Server is running.')
         while True:
             self.refresh_tasks()
             for task in self.tasks:
-                for m in task.metrics:
-                    if m.type == 'line':
-                        self.vis.line(Y=m.data[:, 1], X=m.data[:, 0],
-                                      win=m.name, env=task.name, opts=dict(title=m.name))
-                    elif m.type == 'bar':
-                        rn = [str(i) for i in range(len(m.data))]
-                        title = m.name.capitalize() + ' for epoch ' + str(task.best_epoch)
-                        self.vis.bar(m.data,
-                                     win=m.name, env=task.name, opts=dict(title=title, rownames=rn))
+                self.show_task_info(task)
+                self.plot_task_metrics(task)
             
             time.sleep(2 * 60)
     
