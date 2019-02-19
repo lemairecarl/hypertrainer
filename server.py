@@ -2,8 +2,10 @@ import time
 import os
 from pathlib import Path
 from collections import defaultdict
+from threading import Thread
 
 import visdom
+import visdom.server
 
 from task import Task
 from utils import get_item_at_path, make_info_tables
@@ -15,6 +17,8 @@ INFO_FIELDS = ['global.model_name', 'training.output_path', 'training.num_epochs
 
 class Server(object):
     def __init__(self):
+        Thread(target=visdom.server.main).start()
+        
         self.vis = visdom.Visdom()
         self.tasks = []
         

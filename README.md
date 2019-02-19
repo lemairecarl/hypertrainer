@@ -19,9 +19,7 @@ The child configs will be generated alongside their parent.
 
 First, set the `EM_CONFIGS_PATH` environment variable to the directory containing your config files. (You can set it to `sample/`.)
 
-Then, make sure you have `visdom` installed (`pip install visdom`), and run `visdom` in a terminal to fire up a visdom server.
-
-Finally, run:
+Then, run:
 
 ```
 python server.py
