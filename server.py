@@ -1,21 +1,16 @@
 import time
 import os
 from pathlib import Path
-from collections import namedtuple, defaultdict
+from collections import defaultdict
 
-import pandas as pd
-from ruamel_yaml import YAML
 import visdom
 
+from task import Task
 from utils import get_item_at_path, make_info_tables
 
-yaml = YAML()
 
 CONFIGS_PATH = Path(os.environ['EM_CONFIGS_PATH'])
 INFO_FIELDS = ['global.model_name', 'training.output_path', 'training.num_epochs']
-
-Task = namedtuple('Task', ['name', 'config', 'metrics', 'best_epoch'])
-Metric = namedtuple('Metric', ['name', 'type', 'data'])
 
 
 class Server(object):
@@ -26,37 +21,6 @@ class Server(object):
         if not self.vis.check_connection():
             raise RuntimeError('A visdom server must be running. Please run `visdom` in a terminal.')
     
-    @staticmethod
-    def get_metrics(config_data):
-        # TODO train + val
-        metrics = []
-        output_path = Path(get_item_at_path(config_data, 'training.output_path'))
-        
-        # Loss
-        losses = pd.read_csv(output_path / 'trn_losses_values.log', sep=' ', header=None, names=['ep', 'val'])
-        metrics.append(
-            Metric(name='Loss', type='line', data=losses.values)
-        )
-        best_epoch = losses['val'].idxmin()
-        assert losses['ep'][best_epoch] == best_epoch
-        
-        # Classwise final score
-        all_scores = pd.read_csv(output_path / 'trn_classes_score.log', sep=' ', header=None, names=['ep', 'id', 'val'])
-        scores = all_scores[all_scores['ep'] == best_epoch].copy()
-        scores['metric'], scores['class_idx'] = scores['id'].str.split('_', 1).str
-        for name, val in scores.groupby('metric'):
-            metrics.append(
-                Metric(name=name, type='bar', data=val['val'].values)
-            )
-        
-        return metrics, best_epoch
-    
-    def retrieve_task(self, config_file_path):
-        config_file_path = Path(config_file_path)
-        config_data = yaml.load(config_file_path)
-        metrics, best_epoch = self.get_metrics(config_data)
-        return Task(config_file_path.stem, config_data, metrics, best_epoch)
-    
     def refresh_tasks(self):
         """
         TODO documentation
@@ -66,19 +30,9 @@ class Server(object):
         self.tasks.clear()
         # Iterate on yaml files
         for config_file_path in CONFIGS_PATH.glob('*.yaml'):
-            task = self.retrieve_task(config_file_path)
-            self.tasks.append(task)
+            self.tasks.append(Task.from_config_file(config_file_path))
         
-        # Add suffix to parent configs (problem because of visdom)
-        prefix_map = defaultdict(lambda: (999, None))
-        for task in self.tasks:
-            name_tokens = task.name.split('_')
-            if len(name_tokens) < prefix_map[name_tokens[0]][0]:
-                prefix_map[name_tokens[0]] = (len(name_tokens), task)
-        for n, task in prefix_map.values():
-            modified_task = Task(task.name + '_main', task.config, task.metrics, task.best_epoch)
-            self.tasks.remove(task)
-            self.tasks.append(modified_task)
+        self.add_suffixes_to_parent_configs()
     
     def show_task_info(self, task):
         info = [(field_path, get_item_at_path(task.config, field_path)) for field_path in INFO_FIELDS]
@@ -109,6 +63,16 @@ class Server(object):
                 self.plot_task_metrics(task)
             
             time.sleep(2 * 60)
+            
+    def add_suffixes_to_parent_configs(self):
+        # needed because of how the visdom UI works
+        prefix_map = defaultdict(lambda: (999, None))
+        for task in self.tasks:
+            name_tokens = task.name.split('_')
+            if len(name_tokens) < prefix_map[name_tokens[0]][0]:
+                prefix_map[name_tokens[0]] = (len(name_tokens), task)
+        for n, task in prefix_map.values():
+            task.name += '_main'
 
 
 if __name__ == '__main__':
