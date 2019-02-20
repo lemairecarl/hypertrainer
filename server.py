@@ -22,7 +22,7 @@ class Server(object):
         self.vis = visdom.Visdom()
         self.tasks = []
         
-        if not self.vis.check_connection():
+        if not self.vis.check_connection(timeout_seconds=4):
             raise RuntimeError('A visdom server must be running. Please run `visdom` in a terminal.')
     
     def refresh_tasks(self):
