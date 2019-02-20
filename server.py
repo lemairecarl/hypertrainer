@@ -2,7 +2,7 @@ import time
 import os
 from pathlib import Path
 from collections import defaultdict
-from threading import Thread
+from multiprocessing import Process
 
 import visdom
 import visdom.server
@@ -17,7 +17,7 @@ INFO_FIELDS = ['global.model_name', 'training.output_path', 'training.num_epochs
 
 class Server(object):
     def __init__(self):
-        Thread(target=visdom.server.main).start()
+        Process(target=visdom.server.main).start()
         
         self.vis = visdom.Visdom()
         self.tasks = []
