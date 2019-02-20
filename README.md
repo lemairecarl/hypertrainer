@@ -1,4 +1,4 @@
-# Experiment Manager (catchy name coming soon)
+# HyperTrainer
 
 Trello board:
 https://trello.com/b/C1VCfrSW/rncan-experiment-manager
