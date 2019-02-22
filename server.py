@@ -7,7 +7,7 @@ from flask import Flask, request, render_template
 from experimentmanager import ExperimentManager
 
 app = Flask(__name__)
-em = ExperimentManager(start_visdom=False)
+em = ExperimentManager(use_visdom=False)
 
 
 @app.route('/', methods=['GET', 'POST'])

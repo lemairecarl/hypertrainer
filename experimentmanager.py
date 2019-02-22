@@ -17,15 +17,14 @@ INFO_FIELDS = ['global.model_name', 'training.output_path', 'training.num_epochs
 
 
 class ExperimentManager(object):
-    def __init__(self, start_visdom=True):
-        if start_visdom:
-            Process(target=visdom.server.main).start()
-        
-        self.vis = visdom.Visdom()
+    def __init__(self, use_visdom=True):
         self.tasks = {}
         
-        if not self.vis.check_connection(timeout_seconds=4):
-            raise RuntimeError('A visdom server must be running. Please run `visdom` in a terminal.')
+        if use_visdom:
+            Process(target=visdom.server.main).start()
+            self.vis = visdom.Visdom()
+            if not self.vis.check_connection(timeout_seconds=4):
+                raise RuntimeError('A visdom server must be running. Please run `visdom` in a terminal.')
     
     def refresh_tasks(self):
         """
