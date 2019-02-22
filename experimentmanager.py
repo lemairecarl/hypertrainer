@@ -15,7 +15,7 @@ CONFIGS_PATH = Path(os.environ['EM_CONFIGS_PATH'])
 INFO_FIELDS = ['global.model_name', 'training.output_path', 'training.num_epochs']
 
 
-class Server(object):
+class ExperimentManager(object):
     def __init__(self):
         Process(target=visdom.server.main).start()
         
@@ -80,5 +80,5 @@ class Server(object):
 
 
 if __name__ == '__main__':
-    s = Server()
-    s.main_loop()
+    em = ExperimentManager()
+    em.main_loop()
