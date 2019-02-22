@@ -15,7 +15,6 @@ class Task:
         self.config = config
         self.metrics = []
         self.best_epoch = None
-        self.get_metrics()
 
     @staticmethod
     def from_config_file(config_file_path):
@@ -23,7 +22,9 @@ class Task:
         config_data = yaml.load(config_file_path)
         return Task(config_file_path.stem, config_data)
     
-    def get_metrics(self):
+    def refresh_metrics(self):
+        self.metrics.clear()
+        
         # TODO train + val
         output_path = Path(get_item_at_path(self.config, 'training.output_path'))
     
@@ -44,6 +45,12 @@ class Task:
             self.metrics.append(
                 Metric(name=name, type='bar', data=val['val'].values)
             )
+            
+    def get_output(self):
+        # return stdout, stderr as strings
+        out_filepath = Path(self.config['output_path']) / 'out.txt'
+        err_filepath = Path(self.config['output_path']) / 'err.txt'
+        return out_filepath.read_text(), err_filepath.read_text()
 
 
 @dataclass

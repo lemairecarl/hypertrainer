@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 from collections import defaultdict
 from multiprocessing import Process
+import subprocess
 
 import visdom
 import visdom.server
@@ -16,11 +17,13 @@ INFO_FIELDS = ['global.model_name', 'training.output_path', 'training.num_epochs
 
 
 class ExperimentManager(object):
-    def __init__(self):
-        Process(target=visdom.server.main).start()
+    def __init__(self, start_visdom=True):
+        if start_visdom:
+            Process(target=visdom.server.main).start()
         
         self.vis = visdom.Visdom()
         self.tasks = []
+        self.processes = {}
         
         if not self.vis.check_connection(timeout_seconds=4):
             raise RuntimeError('A visdom server must be running. Please run `visdom` in a terminal.')
@@ -63,11 +66,24 @@ class ExperimentManager(object):
         while True:
             self.refresh_tasks()
             for task in self.tasks:
+                task.refresh_metrics()
                 self.show_task_info(task)
                 self.plot_task_metrics(task)
             
             time.sleep(2 * 60)
-            
+    
+    def launch_script(self, script_path: Path, config_file_path: Path):
+        t = Task.from_config_file(config_file_path)
+        p = subprocess.Popen(['python', str(script_path), str(config_file_path)],
+                             cwd=os.path.dirname(os.path.realpath(__file__)),
+                             universal_newlines=True)
+        # TODO add to self.tasks
+        # FIXME do I need to keep the Popen?
+        self.processes[t] = p
+        
+    def get_all_outputs(self):
+        return {t.name: t.get_output() for t in self.processes.keys()}
+    
     def add_suffixes_to_parent_configs(self):
         # needed because of how the visdom UI works
         prefix_map = defaultdict(lambda: (999, None))

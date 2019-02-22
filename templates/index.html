@@ -1,0 +1,27 @@
+<!doctype html>
+<title>HyperTrainer</title>
+
+<h1>HyperTrainer</h1>
+
+<h2>Menu</h2>
+<ul>
+  <li><a href="/monitor">Go to monitoring</a></li>
+</ul>
+
+<h2>Status message</h2>
+<p>
+{% if msg %}
+  {{ msg }}
+{% else %}
+  Hi there.
+{% endif %}
+</p>
+
+<div>
+  <h2>Submit task</h2>
+  <form action="/submit" method="post">
+    <label for="script">Script</label><input name="script" id="script">
+    <label for="config">Config</label><input name="config" id="config">
+    <button formaction="submit">Submit</button>
+  </form>
+</div>

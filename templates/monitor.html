@@ -1,0 +1,14 @@
+<!doctype html>
+<title>HyperTrainer Monitor</title>
+
+<a href="/">Go back home</a>
+
+<h1>HyperTrainer Monitor</h1>
+
+{% for task_name, output_tuple in all_outputs.items() %}
+    <h2>{{ task_name }}</h2>
+    <h3>Stdout:</h3>
+    <p>{{ output_tuple[0] }}</p>
+    <h3>Stderr:</h3>
+    <p>{{ output_tuple[1] }}</p>
+{% endfor %}
