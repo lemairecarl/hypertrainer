@@ -15,6 +15,7 @@ class Task:
         self.config = config
         self.metrics = []
         self.best_epoch = None
+        self.task_id = None
 
     @staticmethod
     def from_config_file(config_file_path):

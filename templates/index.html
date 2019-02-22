@@ -3,25 +3,30 @@
 
 <h1>HyperTrainer</h1>
 
-<h2>Menu</h2>
-<ul>
-  <li><a href="/monitor">Go to monitoring</a></li>
-</ul>
-
 <h2>Status message</h2>
-<p>
-{% if msg %}
-  {{ msg }}
-{% else %}
-  Hi there.
-{% endif %}
-</p>
+<p>{{ msg }}</p>
 
 <div>
-  <h2>Submit task</h2>
-  <form action="/submit" method="post">
+  <h2>Submit new task</h2>
+  <form action="/?action=submit" method="post">
     <label for="script">Script</label><input name="script" id="script">
     <label for="config">Config</label><input name="config" id="config">
-    <button formaction="submit">Submit</button>
+    <input type="submit" value="Submit">
   </form>
 </div>
+
+<h2>Tasks</h2>
+
+<table>
+  <tr><th>ID</th><th>Name</th><th>Actions</th></tr>
+  {% for task in tasks %}
+    <tr>
+      <td>{{ task.task_id }}</td>
+      <td>{{ task.name }}</td>
+      <td>
+        <a href="/monitor/{{ task.task_id }}">Monitor</a>
+        <a href="/?action=kill&task_id={{ task.task_id }}">Kill</a>
+      </td>
+    </tr>
+{% endfor %}
+</table>

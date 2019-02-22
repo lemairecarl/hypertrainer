@@ -22,8 +22,7 @@ class ExperimentManager(object):
             Process(target=visdom.server.main).start()
         
         self.vis = visdom.Visdom()
-        self.tasks = []
-        self.processes = {}
+        self.tasks = {}
         
         if not self.vis.check_connection(timeout_seconds=4):
             raise RuntimeError('A visdom server must be running. Please run `visdom` in a terminal.')
@@ -37,6 +36,7 @@ class ExperimentManager(object):
         self.tasks.clear()
         # Iterate on yaml files
         for config_file_path in CONFIGS_PATH.glob('*.yaml'):
+            raise NotImplementedError  # TODO task_id when no pid?
             self.tasks.append(Task.from_config_file(config_file_path))
         
         self.add_suffixes_to_parent_configs()
@@ -73,16 +73,15 @@ class ExperimentManager(object):
             time.sleep(2 * 60)
     
     def launch_script(self, script_path: Path, config_file_path: Path):
-        t = Task.from_config_file(config_file_path)
         p = subprocess.Popen(['python', str(script_path), str(config_file_path)],
                              cwd=os.path.dirname(os.path.realpath(__file__)),
                              universal_newlines=True)
-        # TODO add to self.tasks
-        # FIXME do I need to keep the Popen?
-        self.processes[t] = p
+        t = Task.from_config_file(config_file_path)
+        t.task_id = p.pid
+        self.tasks[t.task_id] = t
         
     def get_all_outputs(self):
-        return {t.name: t.get_output() for t in self.processes.keys()}
+        return {t.name: t.get_output() for t in self.tasks}
     
     def add_suffixes_to_parent_configs(self):
         # needed because of how the visdom UI works
