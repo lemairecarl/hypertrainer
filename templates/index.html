@@ -1,5 +1,32 @@
 <!doctype html>
 <title>HyperTrainer</title>
+<style>
+  table
+  {
+    border-collapse: collapse;
+  }
+  table td
+  {
+    border: 1px solid black;
+    padding: 0.4em;
+  }
+  table td.Running { background-color: #7aa3ff; }
+  table td.Finished { background-color: #78e878; }
+  table td.Crashed { background-color: #ff7676; }
+  table td.Cancelled { background-color: #bfbfbf; }
+  .button {
+    font: 0.8rem Arial;
+    text-decoration: none;
+    background-color: #EEEEEE;
+    color: #333333;
+    padding: 2px 6px 2px 6px;
+    border-top: 1px solid #CCCCCC;
+    border-right: 1px solid #333333;
+    border-bottom: 1px solid #333333;
+    border-left: 1px solid #CCCCCC;
+  }
+
+</style>
 
 <h1>HyperTrainer</h1>
 
@@ -17,15 +44,25 @@
 
 <h2>Tasks</h2>
 
+<p><a href="/">Refresh</a></p>
+
 <table>
-  <tr><th>ID</th><th>Name</th><th>Actions</th></tr>
+  <tr>
+    <th>ID</th>
+    <th>Platform</th>
+    <th>Name</th>
+    <th>Status</th>
+    <th>Actions</th>
+  </tr>
   {% for task in tasks %}
     <tr>
       <td>{{ task.task_id }}</td>
+      <td>{{ task.platform.name }}</td>
       <td>{{ task.name }}</td>
+      <td class="{{ task.status_str }}">{{ task.status_str }}</td>
       <td>
-        <a href="/monitor/{{ task.task_id }}">Monitor</a>
-        <a href="/?action=kill&task_id={{ task.task_id }}">Kill</a>
+        <a href="/monitor/{{ task.task_id }}" class="button">Monitor</a>
+        <a href="/?action=kill&task_id={{ task.task_id }}" class="button">Cancel</a>
       </td>
     </tr>
 {% endfor %}

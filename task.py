@@ -4,28 +4,41 @@ import pandas as pd
 from dataclasses import dataclass
 from ruamel_yaml import YAML
 
+from computeplatform import LocalPlatform
 from utils import get_item_at_path
 
 yaml = YAML()
 
 
 class Task:
-    def __init__(self, name: str, config):
-        self.name = name
-        self.config = config
+    def __init__(self, script_file_path: Path, config_file_path: Path):
         self.metrics = []
         self.best_epoch = None
         self.task_id = None
+        self.job_id = None  # Platform specific ID
+        self.platform = LocalPlatform()
 
-    @staticmethod
-    def from_config_file(config_file_path):
-        config_file_path = Path(config_file_path)
-        config_data = yaml.load(config_file_path)
-        return Task(config_file_path.stem, config_data)
+        self.script_file_path: Path = script_file_path
+        self.config_file_path: Path = config_file_path
+        self.config = yaml.load(config_file_path)
+        self.name = self.config_file_path.stem
+
+    def submit(self):
+        self.job_id = self.platform.submit(self)
+        self.task_id = self.platform.name + '_' + self.job_id
+        
+    def cancel(self):
+        self.platform.cancel(self)
+        
+    @property
+    def status_str(self):
+        # TODO more efficient
+        return self.platform.monitor(self)['status'].value
     
     def refresh_metrics(self):
         self.metrics.clear()
         
+        # TODO use self.platform
         # TODO train + val
         output_path = Path(get_item_at_path(self.config, 'training.output_path'))
     
@@ -48,6 +61,7 @@ class Task:
             )
             
     def get_output(self):
+        # TODO use self.platform
         # return stdout, stderr as strings
         out_filepath = Path(self.config['output_path']) / 'out.txt'
         err_filepath = Path(self.config['output_path']) / 'err.txt'

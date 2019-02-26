@@ -1,1 +1,4 @@
 output_path: data/dummy
+n_iter: 30
+secs_per_iter: 1
+#die_after: 10

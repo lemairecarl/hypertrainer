@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 from collections import defaultdict
 from multiprocessing import Process
-import subprocess
 
 import visdom
 import visdom.server
@@ -16,7 +15,7 @@ CONFIGS_PATH = Path(os.environ['EM_CONFIGS_PATH'])
 INFO_FIELDS = ['global.model_name', 'training.output_path', 'training.num_epochs']
 
 
-class ExperimentManager(object):
+class ExperimentManager:
     def __init__(self, use_visdom=True):
         self.tasks = {}
         
@@ -71,13 +70,13 @@ class ExperimentManager(object):
             
             time.sleep(2 * 60)
     
-    def launch_script(self, script_path: Path, config_file_path: Path):
-        p = subprocess.Popen(['python', str(script_path), str(config_file_path)],
-                             cwd=os.path.dirname(os.path.realpath(__file__)),
-                             universal_newlines=True)
-        t = Task.from_config_file(config_file_path)
-        t.task_id = p.pid
+    def submit(self, script_path: Path, config_file_path: Path):
+        t = Task(script_path, config_file_path)
+        t.submit()
         self.tasks[t.task_id] = t
+        
+    def cancel_from_id(self, task_id):
+        self.tasks[task_id].cancel()
         
     def get_all_outputs(self):
         return {t.name: t.get_output() for t in self.tasks}

@@ -1,3 +1,4 @@
+from enum import Enum
 from functools import reduce
 
 
@@ -39,3 +40,11 @@ def make_info_tables(tables_dict):
         html += '<div class="h">{}</div>'.format(name)
         html += make_html_table(table)
     return html
+
+
+class TaskStatus(Enum):
+    Waiting = 'Waiting'
+    Running = 'Running'
+    Finished = 'Finished'
+    Cancelled = 'Cancelled'
+    Crashed = 'Crashed'

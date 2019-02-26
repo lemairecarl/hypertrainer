@@ -24,7 +24,7 @@ def main(msg='Ready.'):
     return render_template('index.html', tasks=em.tasks.values(), msg=msg)
 
 
-@app.route('/monitor/<int:task_id>')
+@app.route('/monitor/<task_id>')
 def monitor(task_id):
     task = em.tasks[task_id]
     stdout, stderr = task.get_output()
@@ -34,11 +34,11 @@ def monitor(task_id):
 def submit():
     script_path = request.form['script']
     config_path = request.form['config']
-    em.launch_script(script_path=Path(script_path), config_file_path=Path(config_path))
+    em.submit(script_path=Path(script_path), config_file_path=Path(config_path))
     return 'Launching "{}" with "{}".'.format(script_path, config_path)
 
 
 def kill():
-    task_id = int(request.args.get('task_id'))
-    os.kill(task_id, signal.SIGTERM)
-    return 'Killed task with pid {}.'.format(task_id)
+    task_id = request.args.get('task_id')
+    em.cancel_from_id(task_id)
+    return 'Cancelling task {}.'.format(task_id)
