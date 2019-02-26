@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 from ruamel_yaml import YAML
 
-from utils import set_item_at_path
+from hypertrainer.utils import set_item_at_path
 
 ap = argparse.ArgumentParser()
 ap.add_argument('input_file', type=str, help='Path to yaml file')

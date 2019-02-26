@@ -4,8 +4,8 @@ import pandas as pd
 from dataclasses import dataclass
 from ruamel_yaml import YAML
 
-from computeplatform import LocalPlatform
-from utils import get_item_at_path
+from hypertrainer.computeplatform import LocalPlatform
+from hypertrainer.utils import get_item_at_path
 
 yaml = YAML()
 

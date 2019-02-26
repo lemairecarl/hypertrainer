@@ -1,15 +1,12 @@
-import functools
 from pathlib import Path
 import sys
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for
+    Blueprint, render_template, request
 )
 
-from hypertrainer.db import get_db
-
 sys.path.append("..")  # FIXME
-from experimentmanager import experiment_manager as em
+from hypertrainer.experimentmanager import experiment_manager as em
 
 bp = Blueprint('dashboard', __name__)
 

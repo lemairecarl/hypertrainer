@@ -7,8 +7,8 @@ from multiprocessing import Process
 import visdom
 import visdom.server
 
-from task import Task
-from utils import get_item_at_path, make_info_tables
+from hypertrainer.task import Task
+from hypertrainer.utils import get_item_at_path, make_info_tables
 
 
 CONFIGS_PATH = Path(os.environ['EM_CONFIGS_PATH'])

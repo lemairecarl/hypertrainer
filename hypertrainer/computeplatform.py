@@ -3,7 +3,7 @@ import signal
 import subprocess
 from abc import ABC, abstractmethod
 
-from utils import TaskStatus
+from hypertrainer.utils import TaskStatus
 
 
 class ComputePlatform(ABC):
