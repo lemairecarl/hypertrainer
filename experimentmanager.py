@@ -16,7 +16,7 @@ INFO_FIELDS = ['global.model_name', 'training.output_path', 'training.num_epochs
 
 
 class ExperimentManager:
-    def __init__(self, use_visdom=True):
+    def __init__(self, use_visdom=False):
         self.tasks = {}
         
         if use_visdom:
@@ -92,6 +92,4 @@ class ExperimentManager:
             task.name += '_main'
 
 
-if __name__ == '__main__':
-    em = ExperimentManager()
-    em.main_loop()
+experiment_manager = ExperimentManager()
