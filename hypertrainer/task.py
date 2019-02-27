@@ -59,13 +59,23 @@ class Task:
             self.metrics.append(
                 Metric(name=name, type='bar', data=val['val'].values)
             )
-            
+    
+    @property
+    def stdout_path(self):
+        path = Path(self.config['output_path']) / 'out.txt'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
+    
+    @property
+    def stderr_path(self):
+        path = Path(self.config['output_path']) / 'err.txt'
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
+    
     def get_output(self):
         # TODO use self.platform
         # return stdout, stderr as strings
-        out_filepath = Path(self.config['output_path']) / 'out.txt'
-        err_filepath = Path(self.config['output_path']) / 'err.txt'
-        return out_filepath.read_text(), err_filepath.read_text()
+        return self.stdout_path.read_text(), self.stderr_path.read_text()
 
 
 @dataclass

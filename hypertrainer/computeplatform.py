@@ -47,6 +47,8 @@ class LocalPlatform(ComputePlatform):
     
     def submit(self, task):
         p = subprocess.Popen(['python', str(task.script_file_path), str(task.config_file_path)],
+                             stdout=task.stdout_path.open(mode='w'),
+                             stderr=task.stderr_path.open(mode='w'),
                              cwd=os.path.dirname(os.path.realpath(__file__)),
                              universal_newlines=True)
         self.processes[p.pid] = p
