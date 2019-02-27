@@ -5,7 +5,6 @@ from flask import (
     Blueprint, render_template, request
 )
 
-sys.path.append("..")  # FIXME
 from hypertrainer.experimentmanager import experiment_manager as em
 
 bp = Blueprint('dashboard', __name__)
