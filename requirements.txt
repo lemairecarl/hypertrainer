@@ -1,4 +1,5 @@
 flask>=1.0.0
+peewee
 ruamel_yaml
 pandas
 visdom
