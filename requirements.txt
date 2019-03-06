@@ -1,6 +1,6 @@
 flask>=1.0.0
+ruamel.yaml
 peewee
-ruamel_yaml
 pandas
 visdom
 dataclasses

@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from ruamel_yaml import YAML
+import pandas as pd
+from dataclasses import dataclass
+from ruamel.yaml import YAML
 
 from hypertrainer.computeplatform import ComputePlatformType, get_platform
 
@@ -44,10 +46,10 @@ class Task:
     def submit(self):
         self.job_id = self.platform.submit(self)
         self.task_id = self.platform_type.value + '_' + self.job_id
-        
+
     def cancel(self):
         self.platform.cancel(self)
-    
+
     def get_output(self):
         # TODO use self.platform
         # return stdout, stderr as strings
