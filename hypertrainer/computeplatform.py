@@ -2,13 +2,12 @@ import os
 import signal
 import subprocess
 from abc import ABC, abstractmethod
+from enum import Enum
 
 from hypertrainer.utils import TaskStatus
 
 
 class ComputePlatform(ABC):
-    name = NotImplemented  # This must be overridden
-    
     @abstractmethod
     def submit(self, task):
         """Submit a task and return the plaform specific task id."""
@@ -40,8 +39,6 @@ class ComputePlatform(ABC):
 
 
 class LocalPlatform(ComputePlatform):
-    name = 'local'
-    
     def __init__(self):
         self.processes = {}
     
@@ -74,3 +71,16 @@ class LocalPlatform(ComputePlatform):
 
     def cancel(self, task):
         os.kill(int(task.job_id), signal.SIGTERM)
+
+
+class ComputePlatformType(Enum):
+    LOCAL = 'local'
+
+
+platform_instances = {  # TODO should instantiate on-demand
+    ComputePlatformType.LOCAL: LocalPlatform()
+}
+
+
+def get_platform(p_type: ComputePlatformType):
+    return platform_instances[p_type]

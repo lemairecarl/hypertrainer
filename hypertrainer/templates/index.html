@@ -71,7 +71,7 @@
         {% for task in tasks %}
           <tr>
             <td data-label="ID">{{ task.task_id }}</td>
-            <td data-label="Platform">{{ task.platform.name }}</td>
+            <td data-label="Platform">{{ task.platform_type.value }}</td>
             <td data-label="Name">{{ task.name }}</td>
             <td data-label="Status" class="{{ task.status_str }}">{{ task.status_str }}</td>
             <td data-label="Actions">

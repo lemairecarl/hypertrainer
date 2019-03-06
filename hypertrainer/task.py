@@ -2,7 +2,7 @@ from pathlib import Path
 
 from ruamel_yaml import YAML
 
-from hypertrainer.computeplatform import LocalPlatform
+from hypertrainer.computeplatform import ComputePlatformType, get_platform
 
 yaml = YAML()
 
@@ -13,12 +13,16 @@ class Task:
         self.best_epoch = None
         self.task_id = None
         self.job_id = None  # Platform specific ID
-        self.platform = LocalPlatform()
+        self.platform_type: ComputePlatformType = ComputePlatformType.LOCAL
 
         self.script_file_path: Path = script_file_path
         self.config_file_path: Path = config_file_path
         self.config = yaml.load(config_file_path)
         self.name = self.config_file_path.stem
+
+    @property
+    def platform(self):
+        return get_platform(self.platform_type)
 
     @property
     def status_str(self):
@@ -39,7 +43,7 @@ class Task:
 
     def submit(self):
         self.job_id = self.platform.submit(self)
-        self.task_id = self.platform.name + '_' + self.job_id
+        self.task_id = self.platform_type.value + '_' + self.job_id
         
     def cancel(self):
         self.platform.cancel(self)
