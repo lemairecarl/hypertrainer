@@ -4,7 +4,14 @@ import subprocess
 from abc import ABC, abstractmethod
 from enum import Enum
 
+from dataclasses import dataclass
+
 from hypertrainer.utils import TaskStatus
+
+
+@dataclass
+class TaskState:
+    status: TaskStatus
 
 
 class ComputePlatform(ABC):
@@ -43,7 +50,7 @@ class LocalPlatform(ComputePlatform):
         self.processes = {}
     
     def submit(self, task):
-        p = subprocess.Popen(['python', str(task.script_file_path), str(task.config_file_path)],
+        p = subprocess.Popen(['python', task.script_file, task.config_file],
                              stdout=task.stdout_path.open(mode='w'),
                              stderr=task.stderr_path.open(mode='w'),
                              cwd=os.path.dirname(os.path.realpath(__file__)),
@@ -51,11 +58,14 @@ class LocalPlatform(ComputePlatform):
         self.processes[p.pid] = p
         return str(p.pid)
     
-    def monitor(self, task, keys=None):
+    def monitor(self, task, keys=None) -> TaskState:
         if keys is not None and (len(keys) >= 2 or 'status' not in keys):
             raise NotImplementedError
         
-        p = self.processes[int(task.job_id)]  # type: subprocess.Popen
+        p = self.processes.get(int(task.job_id), None)  # type: subprocess.Popen
+        if p is None:
+            return TaskState(status=TaskStatus.Lost)
+
         poll_result = p.poll()
         if poll_result is None:
             status = TaskStatus.Running
@@ -67,7 +77,7 @@ class LocalPlatform(ComputePlatform):
                 status = TaskStatus.Cancelled
             else:
                 status = TaskStatus.Crashed
-        return {'status': status}
+        return TaskState(status=status)
 
     def cancel(self, task):
         os.kill(int(task.job_id), signal.SIGTERM)

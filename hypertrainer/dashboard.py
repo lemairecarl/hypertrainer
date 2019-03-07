@@ -1,10 +1,8 @@
-from pathlib import Path
-import sys
-
 from flask import (
     Blueprint, render_template, request, flash, redirect, url_for
 )
 
+from hypertrainer.task import Task
 from hypertrainer.experimentmanager import experiment_manager as em
 
 bp = Blueprint('dashboard', __name__)
@@ -21,21 +19,21 @@ def index():
         pass
     else:
         flash('ERROR: Unrecognized action!', 'error')
-    return render_template('index.html', tasks=em.tasks.values())
+    return render_template('index.html', tasks=em.get_all_tasks())
 
 
 @bp.route('/monitor/<task_id>')
 def monitor(task_id):
-    task = em.tasks[task_id]
+    task = Task.get(Task.id == task_id)
     stdout, stderr = task.get_output()
     return render_template('monitor.html', task=task, stdout=stdout, stderr=stderr)
 
 
 def submit():
-    script_path = request.form['script']
-    config_path = request.form['config']
-    em.submit(script_path=Path(script_path), config_file_path=Path(config_path))
-    flash('Submitted "{}" with "{}".'.format(script_path, config_path), 'success')
+    script_file = request.form['script']
+    config_file = request.form['config']
+    em.submit(script_file, config_file)
+    flash('Submitted "{}" with "{}".'.format(script_file, config_file), 'success')
     return redirect(url_for('index'))
 
 

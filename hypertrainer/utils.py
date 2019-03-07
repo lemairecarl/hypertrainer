@@ -48,3 +48,4 @@ class TaskStatus(Enum):
     Finished = 'Finished'
     Cancelled = 'Cancelled'
     Crashed = 'Crashed'
+    Lost = 'Lost'

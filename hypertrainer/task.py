@@ -1,26 +1,38 @@
 from pathlib import Path
 
-import pandas as pd
-from dataclasses import dataclass
 from ruamel.yaml import YAML
+from peewee import CharField
 
-from hypertrainer.computeplatform import ComputePlatformType, get_platform
+from hypertrainer.computeplatform import TaskState, ComputePlatformType, get_platform
+from hypertrainer.db import BaseModel, EnumField
+from hypertrainer.utils import TaskStatus
 
 yaml = YAML()
 
 
-class Task:
-    def __init__(self, script_file_path: Path, config_file_path: Path):
+class Task(BaseModel):
+    job_id = CharField()
+    platform = EnumField(ComputePlatformType)
+    script_file = CharField()
+    config_file = CharField()
+    name = CharField()
+
+    def __init__(self, script_file: str, config_file: str, job_id=None, platform_type=ComputePlatformType.LOCAL,
+                 name=None, **kwargs):
+        super().__init__(**kwargs)
+
+        self.job_id = job_id  # Platform specific ID
+        self.platform_type = platform_type
+        self.script_file = script_file
+        self.config_file = config_file
+
+        self.config_file_path = Path(config_file)
+        self.config = yaml.load(self.config_file_path)  # FIXME not in model (should be instead of file path)
+        self.name = name or self.config_file_path.stem
+
+        self.current_state = None
         self.metrics = []
         self.best_epoch = None
-        self.task_id = None
-        self.job_id = None  # Platform specific ID
-        self.platform_type: ComputePlatformType = ComputePlatformType.LOCAL
-
-        self.script_file_path: Path = script_file_path
-        self.config_file_path: Path = config_file_path
-        self.config = yaml.load(config_file_path)
-        self.name = self.config_file_path.stem
 
     @property
     def platform(self):
@@ -28,8 +40,11 @@ class Task:
 
     @property
     def status_str(self):
-        # TODO more efficient
-        return self.platform.monitor(self)['status'].value
+        return self.current_state.status.value
+
+    @property
+    def is_running(self):
+        return self.current_state.status == TaskStatus.Running
 
     @property
     def stdout_path(self):
@@ -43,12 +58,19 @@ class Task:
         path.parent.mkdir(parents=True, exist_ok=True)
         return path
 
+    def monitor(self):
+        if self.job_id is None:
+            self.current_state = TaskState(status=TaskStatus.Waiting)
+        else:
+            self.current_state = self.platform.monitor(self)
+
     def submit(self):
         self.job_id = self.platform.submit(self)
-        self.task_id = self.platform_type.value + '_' + self.job_id
+        self.save()
 
     def cancel(self):
         self.platform.cancel(self)
+        # self.save()  # nothing to save
 
     def get_output(self):
         # TODO use self.platform

@@ -9,7 +9,7 @@
 <style type="text/css">
   table td.Running { color: #276f86; background: #f8ffff; }
   table td.Finished { color: #2c662d; background: #fcfff5; }
-  table td.Crashed { color: #9f3a38; background: #fff6f6; }
+  table td.Crashed,td.Lost { color: #9f3a38; background: #fff6f6; }
   table td.Cancelled { color: #573a08; background: #fffaf3; }
 </style>
 
@@ -70,13 +70,15 @@
     {% if tasks %}
         {% for task in tasks %}
           <tr>
-            <td data-label="ID">{{ task.task_id }}</td>
+            <td data-label="ID">{{ task.id }}</td>
             <td data-label="Platform">{{ task.platform_type.value }}</td>
             <td data-label="Name">{{ task.name }}</td>
             <td data-label="Status" class="{{ task.status_str }}">{{ task.status_str }}</td>
             <td data-label="Actions">
-              <a href="/monitor/{{ task.task_id }}" class="ui compact button">Monitor</a>
-              <a href="/?action=kill&task_id={{ task.task_id }}" class="ui compact button">Cancel</a>
+              <a href="/monitor/{{ task.id }}" class="ui compact button">Monitor</a>
+              {% if task.is_running %}
+                <a href="/?action=kill&task_id={{ task.id }}" class="ui compact button">Cancel</a>
+              {% endif %}
             </td>
           </tr>
         {% endfor %}

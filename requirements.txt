@@ -4,3 +4,4 @@ peewee
 pandas
 visdom
 dataclasses
+peewee

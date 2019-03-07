@@ -1,5 +1,4 @@
-import sqlite3
-
+from peewee import SqliteDatabase, Model, Field
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
@@ -12,11 +11,8 @@ def init_app(app):
 
 def get_db():
     if 'db' not in g:
-        g.db = sqlite3.connect(
-            current_app.config['DATABASE'],
-            detect_types=sqlite3.PARSE_DECLTYPES
-        )
-        g.db.row_factory = sqlite3.Row
+        g.db = SqliteDatabase(current_app.config['DATABASE'])
+        g.db.connect()
 
     return g.db
 
@@ -29,10 +25,10 @@ def close_db(e=None):
 
 
 def init_db():
-    db = get_db()
+    from hypertrainer.task import Task
 
-    with current_app.open_resource('schema.sql') as f:
-        db.executescript(f.read().decode('utf8'))
+    db = get_db()
+    db.create_tables([Task])
 
 
 @click.command('init-db')
@@ -41,3 +37,21 @@ def init_db_command():
     """Clear the existing data and create new tables."""
     init_db()
     click.echo('Initialized the database.')
+
+
+class BaseModel(Model):
+    class Meta:
+        database = get_db()
+
+
+class EnumField(Field):
+    def __init__(self, enum_type, **kwargs):
+        super().__init__(**kwargs)
+
+        self.enum_type = enum_type
+
+    def db_value(self, value):
+        return value.value
+
+    def python_value(self, value):
+        return self.enum_type(value)

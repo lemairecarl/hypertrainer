@@ -6,7 +6,7 @@ import argparse
 from pathlib import Path
 from time import sleep
 
-from ruamel_yaml import YAML
+from ruamel.yaml import YAML
 
 yaml = YAML()
 
@@ -22,7 +22,7 @@ err_filepath = Path(config['output_path']) / 'err.txt'
 print('Input YAML config follows:')
 print(Path(args.file).read_text())
 
-n_iter = config.get('n_iter', 30)
+n_iter = config.get('n_iter', 20)
 secs_per_iter = config.get('secs_per_iter', 1)
 die_after = config.get('die_after', -1)
 print('\nStarting iterations!')
