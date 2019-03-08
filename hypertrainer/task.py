@@ -5,19 +5,19 @@ from peewee import CharField
 
 from hypertrainer.computeplatform import TaskState, ComputePlatformType, get_platform
 from hypertrainer.db import BaseModel, EnumField
-from hypertrainer.utils import TaskStatus
+from hypertrainer.utils import TaskStatus, set_item_at_path, get_item_at_path, yaml_to_str
 
 yaml = YAML()
 
 
 class Task(BaseModel):
     job_id = CharField()
-    platform = EnumField(ComputePlatformType)
+    platform_type = EnumField(ComputePlatformType)
     script_file = CharField()
     config_file = CharField()
     name = CharField()
 
-    def __init__(self, script_file: str, config_file: str, job_id=None, platform_type=ComputePlatformType.LOCAL,
+    def __init__(self, script_file: str, config_file: str, job_id='', platform_type=ComputePlatformType.LOCAL,
                  name=None, **kwargs):
         super().__init__(**kwargs)
 
@@ -29,6 +29,7 @@ class Task(BaseModel):
         self.config_file_path = Path(config_file)
         self.config = yaml.load(self.config_file_path)  # FIXME not in model (should be instead of file path)
         self.name = name or self.config_file_path.stem
+        self.save()  # insert in database
 
         self.current_state = None
         self.metrics = []
@@ -58,8 +59,16 @@ class Task(BaseModel):
         path.parent.mkdir(parents=True, exist_ok=True)
         return path
 
+    @property
+    def output_path(self):
+        return get_item_at_path(self.config, 'training.output_path')
+
+    @output_path.setter
+    def output_path(self, path: str):
+        set_item_at_path(self.config, 'training.output_path', path)
+
     def monitor(self):
-        if self.job_id is None:
+        if self.job_id == '':
             self.current_state = TaskState(status=TaskStatus.Waiting)
         else:
             self.current_state = self.platform.monitor(self)
@@ -76,3 +85,6 @@ class Task(BaseModel):
         # TODO use self.platform
         # return stdout, stderr as strings
         return self.stdout_path.read_text(), self.stderr_path.read_text()
+
+    def dump_config(self):
+        return yaml_to_str(self.config, yaml)

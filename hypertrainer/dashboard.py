@@ -2,6 +2,7 @@ from flask import (
     Blueprint, render_template, request, flash, redirect, url_for
 )
 
+from hypertrainer.computeplatform import ComputePlatformType
 from hypertrainer.task import Task
 from hypertrainer.experimentmanager import experiment_manager as em
 
@@ -19,7 +20,8 @@ def index():
         pass
     else:
         flash('ERROR: Unrecognized action!', 'error')
-    return render_template('index.html', tasks=em.get_all_tasks())
+    platforms = [p.value for p in ComputePlatformType]
+    return render_template('index.html', tasks=em.get_all_tasks(), platforms=platforms)
 
 
 @bp.route('/monitor/<task_id>')
@@ -30,10 +32,11 @@ def monitor(task_id):
 
 
 def submit():
+    platform = request.form['platform']
     script_file = request.form['script']
     config_file = request.form['config']
-    em.submit(script_file, config_file)
-    flash('Submitted "{}" with "{}".'.format(script_file, config_file), 'success')
+    em.submit(platform, script_file, config_file)
+    flash('Submitted "{}" with "{}" on {}.'.format(script_file, config_file, platform), 'success')
     return redirect(url_for('index'))
 
 

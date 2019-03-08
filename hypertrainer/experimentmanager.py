@@ -1,5 +1,5 @@
 # FIXME move this code in dashboard.py?
-
+from hypertrainer.computeplatform import ComputePlatformType
 from hypertrainer.task import Task
 
 
@@ -12,8 +12,8 @@ class ExperimentManager:
         return all_tasks
 
     @staticmethod
-    def submit(script_file: str, config_file: str):
-        t = Task(script_file, config_file)
+    def submit(platform: str, script_file: str, config_file: str):
+        t = Task(script_file, config_file, platform_type=ComputePlatformType(platform))
         t.submit()
 
     @staticmethod

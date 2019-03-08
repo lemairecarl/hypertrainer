@@ -42,6 +42,18 @@ def make_info_tables(tables_dict):
     return html
 
 
+def yaml_to_str(obj, yaml_engine):
+    class RuamelIsAnnoying:
+        out = ''
+
+        def write(self, s):
+            RuamelIsAnnoying.out += s.decode('utf-8')
+
+    stream = RuamelIsAnnoying()
+    yaml_engine.dump(obj, stream)
+    return RuamelIsAnnoying.out
+
+
 class TaskStatus(Enum):
     Waiting = 'Waiting'
     Running = 'Running'

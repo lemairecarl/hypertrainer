@@ -3,6 +3,7 @@ import signal
 import subprocess
 from abc import ABC, abstractmethod
 from enum import Enum
+from pathlib import Path
 
 from dataclasses import dataclass
 
@@ -16,12 +17,12 @@ class TaskState:
 
 class ComputePlatform(ABC):
     @abstractmethod
-    def submit(self, task):
+    def submit(self, task) -> str:
         """Submit a task and return the plaform specific task id."""
         pass
     
     @abstractmethod
-    def monitor(self, task, keys=None):
+    def monitor(self, task, keys=None) -> TaskState:
         """Return information about the task.
         
         Methods that override this method are expected to return the following dict:
@@ -83,12 +84,54 @@ class LocalPlatform(ComputePlatform):
         os.kill(int(task.job_id), signal.SIGTERM)
 
 
+class HeliosPlatform(ComputePlatform):
+    def __init__(self, server_user='lemc2220@helios.calculquebec.ca'):
+        self.server_user = server_user
+        self.submission_template = Path('sample/moab_template.sh').read_text()
+
+    def submit(self, task):
+        job_remote_dir = '~/hypertrainer/jobs/' + str(task.id)
+        task.output_path = job_remote_dir
+        submission = self.make_submission_script(task)
+        job_id = self.exec([
+            f'mkdir -p {job_remote_dir}',
+            f'cd {job_remote_dir}',
+            f'printf \'{task.dump_config()}\' > config.yaml',
+            f'printf \'{submission}\' > {task.name}.sh',
+            f'msub {task.name}.sh'
+        ])
+        return job_id
+
+    def monitor(self, task, keys=None):
+        pass
+
+    def cancel(self, task):
+        pass
+
+    def make_submission_script(self, task):
+        sub = self.submission_template\
+            .replace('$HYPERTRAINER_NAME', task.name)\
+            .replace('$HYPERTRAINER_OUTFILE', task.output_path + '/out.txt')\
+            .replace('$HYPERTRAINER_ERRFILE', task.output_path + '/err.txt')\
+            .replace('$HYPERTRAINER_JOB_DIR', task.output_path)\
+            .replace('$HYPERTRAINER_SCRIPT', f'~/hypertrainer/{task.script_file}')\
+            .replace('$HYPERTRAINER_CONFIG', task.output_path + '/config.yaml')
+        return sub
+
+    def exec(self, command_list):
+        concat_commands = '"' + ' && '.join(command_list) + '"'
+        completed_process = subprocess.run(['ssh', self.server_user, concat_commands], stdout=subprocess.PIPE)
+        return completed_process.stdout.decode('utf-8')
+
+
 class ComputePlatformType(Enum):
     LOCAL = 'local'
+    HELIOS = 'helios'
 
 
 platform_instances = {  # TODO should instantiate on-demand
-    ComputePlatformType.LOCAL: LocalPlatform()
+    ComputePlatformType.LOCAL: LocalPlatform(),
+    ComputePlatformType.HELIOS: HeliosPlatform()
 }
 
 
