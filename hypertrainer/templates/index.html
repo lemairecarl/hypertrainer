@@ -84,7 +84,7 @@
             <td data-label="Platform">{{ task.platform_type.value }}</td>
             <td data-label="job_id">{{ task.job_id }}</td>
             <td data-label="Name">{{ task.name }}</td>
-            <td data-label="Status" class="{{ task.status_str }}">{{ task.status_str }}</td>
+            <td data-label="Status" class="{{ task.status.value }}">{{ task.status.value }}</td>
             <td data-label="Actions">
               <a href="/monitor/{{ task.id }}" class="ui compact button">Monitor</a>
               {% if task.is_running %}

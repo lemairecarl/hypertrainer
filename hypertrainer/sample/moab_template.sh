@@ -14,6 +14,7 @@
 # Setup environment
 source /clumeq/bin/enable_cc_cvmfs
 module load python/3.6
+source $HOME/hypertrainer/venv/bin/activate
 
 cd $HYPERTRAINER_JOB_DIR
 python $HYPERTRAINER_SCRIPT $HYPERTRAINER_CONFIGFILE

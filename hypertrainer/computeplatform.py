@@ -46,6 +46,10 @@ class ComputePlatform(ABC):
         """Cancel a task."""
         pass
 
+    @abstractmethod
+    def get_all_statuses(self, job_ids) -> dict:
+        pass
+
 
 class LocalPlatform(ComputePlatform):
     def __init__(self):
@@ -84,8 +88,19 @@ class LocalPlatform(ComputePlatform):
     def cancel(self, task):
         os.kill(int(task.job_id), signal.SIGTERM)
 
+    def get_all_statuses(self, job_ids) -> dict:
+        return {}  # FIXME
+
 
 class HeliosPlatform(ComputePlatform):
+    status_map = {
+        'Defer': TaskStatus.Waiting,
+        'Idle': TaskStatus.Waiting,
+        'Running': TaskStatus.Running,
+        'Canceling': TaskStatus.Cancelled,
+        'Complete': TaskStatus.Finished
+    }
+
     def __init__(self, server_user='lemc2220@helios.calculquebec.ca'):
         self.server_user = server_user
         self.submission_template = Path('sample/moab_template.sh').read_text()
@@ -98,11 +113,24 @@ class HeliosPlatform(ComputePlatform):
 
         completed_process = subprocess.run(['ssh', self.server_user],
                                            input=setup_script.encode(), stdout=subprocess.PIPE)
-        job_id = completed_process.stdout.decode('utf-8')
+        job_id = completed_process.stdout.decode('utf-8').strip()
         return job_id
 
     def monitor(self, task, keys=None):
         pass
+
+    def get_all_statuses(self, job_ids):
+        job_ids_str = ','.join(job_ids)
+        data = subprocess.run(['ssh', self.server_user, f'mdiag -j {job_ids_str} | grep $USER'],
+                              stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode('utf-8')
+        data_lines = data.strip().split('\n')
+        statuses = {}
+        for l in data_lines:
+            cols = l.split()
+            job_id = cols[0]
+            status = cols[1]
+            statuses[job_id] = self.status_map[status]
+        return statuses
 
     def cancel(self, task):
         pass

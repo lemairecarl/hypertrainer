@@ -16,15 +16,17 @@ class Task(BaseModel):
     script_file = CharField()
     config_file = CharField()
     name = CharField()
+    status = EnumField(TaskStatus)
 
     def __init__(self, script_file: str, config_file: str, job_id='', platform_type=ComputePlatformType.LOCAL,
-                 name=None, **kwargs):
+                 name=None, status=TaskStatus.Unknown, **kwargs):
         super().__init__(**kwargs)
 
         self.job_id = job_id  # Platform specific ID
         self.platform_type = platform_type
         self.script_file = script_file
         self.config_file = config_file
+        self.status = status
 
         self.config_file_path = Path(config_file)
         self.config = yaml.load(self.config_file_path)  # FIXME not in model (should be instead of file path)
@@ -38,10 +40,6 @@ class Task(BaseModel):
     @property
     def platform(self):
         return get_platform(self.platform_type)
-
-    @property
-    def status_str(self):
-        return self.current_state.status.value
 
     @property
     def is_running(self):
@@ -66,12 +64,6 @@ class Task(BaseModel):
     @output_path.setter
     def output_path(self, path: str):
         set_item_at_path(self.config, 'training.output_path', path)
-
-    def monitor(self):
-        if self.job_id == '':
-            self.current_state = TaskState(status=TaskStatus.Waiting)
-        else:
-            self.current_state = self.platform.monitor(self)
 
     def submit(self):
         self.job_id = self.platform.submit(self)

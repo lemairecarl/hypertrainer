@@ -61,3 +61,4 @@ class TaskStatus(Enum):
     Cancelled = 'Cancelled'
     Crashed = 'Crashed'
     Lost = 'Lost'
+    Unknown = 'Unknown'
