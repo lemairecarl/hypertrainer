@@ -3,6 +3,7 @@ import signal
 import subprocess
 from abc import ABC, abstractmethod
 from enum import Enum
+from functools import reduce
 from pathlib import Path
 
 from dataclasses import dataclass
@@ -93,9 +94,7 @@ class HeliosPlatform(ComputePlatform):
     def submit(self, task):
         job_remote_dir = '$HOME/hypertrainer/jobs/' + str(task.id)
         task.output_path = job_remote_dir
-
-        submission = self.make_submission_script(task)
-        setup_script = self.make_setup_script(task, submission)
+        setup_script = self.replace_variables(self.setup_template, task, submission=self.submission_template)
 
         completed_process = subprocess.run(['ssh', self.server_user],
                                            input=setup_script.encode(), stdout=subprocess.PIPE)
@@ -108,28 +107,22 @@ class HeliosPlatform(ComputePlatform):
     def cancel(self, task):
         pass
 
-    def make_submission_script(self, task):
-        sub = self.submission_template\
-            .replace('$HYPERTRAINER_NAME', task.name)\
-            .replace('$HYPERTRAINER_OUTFILE', task.output_path + '/out.txt')\
-            .replace('$HYPERTRAINER_ERRFILE', task.output_path + '/err.txt')\
-            .replace('$HYPERTRAINER_JOB_DIR', task.output_path)\
-            .replace('$HYPERTRAINER_SCRIPT', f'$HOME/hypertrainer/{task.script_file}')\
-            .replace('$HYPERTRAINER_CONFIGFILE', task.output_path + '/config.yaml')
-        return sub
-
-    def make_setup_script(self, task, submission):
-        # TODO refactor (similar to other)
-        sub = self.setup_template\
-            .replace('$HYPERTRAINER_NAME', task.name)\
-            .replace('$HYPERTRAINER_OUTFILE', task.output_path + '/out.txt')\
-            .replace('$HYPERTRAINER_ERRFILE', task.output_path + '/err.txt')\
-            .replace('$HYPERTRAINER_JOB_DIR', task.output_path)\
-            .replace('$HYPERTRAINER_SCRIPT', f'$HOME/hypertrainer/{task.script_file}')\
-            .replace('$HYPERTRAINER_CONFIGFILE', task.output_path + '/config.yaml')\
-            .replace('$HYPERTRAINER_CONFIGDATA', task.dump_config())\
-            .replace('$HYPERTRAINER_SUBMISSION', submission)
-        return sub
+    @staticmethod
+    def replace_variables(input_text, task, **kwargs):
+        key_value_map = [
+            ('$HYPERTRAINER_SUBMISSION', kwargs.get('submission', '')),
+            ('$HYPERTRAINER_NAME', task.name),
+            ('$HYPERTRAINER_OUTFILE', task.output_path + '/out.txt'),
+            ('$HYPERTRAINER_ERRFILE', task.output_path + '/err.txt'),
+            ('$HYPERTRAINER_JOB_DIR', task.output_path),
+            ('$HYPERTRAINER_SCRIPT', f'$HOME/hypertrainer/{task.script_file}'),
+            ('$HYPERTRAINER_CONFIGFILE', task.output_path + '/config.yaml'),
+            ('$HYPERTRAINER_CONFIGDATA', task.dump_config())
+        ]
+        output = input_text
+        for key, value in key_value_map:
+            output = output.replace(key, value)
+        return output
 
 
 class ComputePlatformType(Enum):
