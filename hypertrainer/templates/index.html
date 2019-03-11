@@ -44,17 +44,17 @@
         <select class="ui dropdown" name="platform" id="platform">
           <option value="">Platform</option>
           {% for p in platforms %}
-            <option value="{{ p }}">{{ p }}</option>
+            <option value="{{ p }}" {{ 'selected="selected"' if p == 'helios' else '' }}>{{ p }}</option>
           {% endfor %}
         </select>
       </div>
       <div class="field">
         <label for="script">Script</label>
-        <input name="script" id="script">
+        <input name="script" id="script" value="dummy.py">
       </div>
       <div class="field">
         <label for="config">Config</label>
-        <input name="config" id="config">
+        <input name="config" id="config" value="sample/dummy.yaml">
       </div>
       <div class="field">
         <label>&nbsp;</label>

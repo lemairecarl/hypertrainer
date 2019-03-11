@@ -16,4 +16,4 @@ source /clumeq/bin/enable_cc_cvmfs
 module load python/3.6
 
 cd $HYPERTRAINER_JOB_DIR
-python $HYPERTRAINER_SCRIPT $HYPERTRAINER_CONFIG
+python $HYPERTRAINER_SCRIPT $HYPERTRAINER_CONFIGFILE

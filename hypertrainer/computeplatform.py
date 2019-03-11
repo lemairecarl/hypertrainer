@@ -88,18 +88,18 @@ class HeliosPlatform(ComputePlatform):
     def __init__(self, server_user='lemc2220@helios.calculquebec.ca'):
         self.server_user = server_user
         self.submission_template = Path('sample/moab_template.sh').read_text()
+        self.setup_template = Path('sample/moab_setup.sh').read_text()
 
     def submit(self, task):
-        job_remote_dir = '~/hypertrainer/jobs/' + str(task.id)
+        job_remote_dir = '$HOME/hypertrainer/jobs/' + str(task.id)
         task.output_path = job_remote_dir
+
         submission = self.make_submission_script(task)
-        job_id = self.exec([
-            f'mkdir -p {job_remote_dir}',
-            f'cd {job_remote_dir}',
-            f'printf \'{task.dump_config()}\' > config.yaml',
-            f'printf \'{submission}\' > {task.name}.sh',
-            f'msub {task.name}.sh'
-        ])
+        setup_script = self.make_setup_script(task, submission)
+
+        completed_process = subprocess.run(['ssh', self.server_user],
+                                           input=setup_script.encode(), stdout=subprocess.PIPE)
+        job_id = completed_process.stdout.decode('utf-8')
         return job_id
 
     def monitor(self, task, keys=None):
@@ -114,14 +114,22 @@ class HeliosPlatform(ComputePlatform):
             .replace('$HYPERTRAINER_OUTFILE', task.output_path + '/out.txt')\
             .replace('$HYPERTRAINER_ERRFILE', task.output_path + '/err.txt')\
             .replace('$HYPERTRAINER_JOB_DIR', task.output_path)\
-            .replace('$HYPERTRAINER_SCRIPT', f'~/hypertrainer/{task.script_file}')\
-            .replace('$HYPERTRAINER_CONFIG', task.output_path + '/config.yaml')
+            .replace('$HYPERTRAINER_SCRIPT', f'$HOME/hypertrainer/{task.script_file}')\
+            .replace('$HYPERTRAINER_CONFIGFILE', task.output_path + '/config.yaml')
         return sub
 
-    def exec(self, command_list):
-        concat_commands = '"' + ' && '.join(command_list) + '"'
-        completed_process = subprocess.run(['ssh', self.server_user, concat_commands], stdout=subprocess.PIPE)
-        return completed_process.stdout.decode('utf-8')
+    def make_setup_script(self, task, submission):
+        # TODO refactor (similar to other)
+        sub = self.setup_template\
+            .replace('$HYPERTRAINER_NAME', task.name)\
+            .replace('$HYPERTRAINER_OUTFILE', task.output_path + '/out.txt')\
+            .replace('$HYPERTRAINER_ERRFILE', task.output_path + '/err.txt')\
+            .replace('$HYPERTRAINER_JOB_DIR', task.output_path)\
+            .replace('$HYPERTRAINER_SCRIPT', f'$HOME/hypertrainer/{task.script_file}')\
+            .replace('$HYPERTRAINER_CONFIGFILE', task.output_path + '/config.yaml')\
+            .replace('$HYPERTRAINER_CONFIGDATA', task.dump_config())\
+            .replace('$HYPERTRAINER_SUBMISSION', submission)
+        return sub
 
 
 class ComputePlatformType(Enum):
