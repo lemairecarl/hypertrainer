@@ -62,3 +62,6 @@ class TaskStatus(Enum):
     Crashed = 'Crashed'
     Lost = 'Lost'
     Unknown = 'Unknown'
+
+    def is_active(self):
+        return self in {TaskStatus.Waiting, TaskStatus.Running, TaskStatus.Unknown}

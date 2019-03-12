@@ -133,7 +133,9 @@ class HeliosPlatform(ComputePlatform):
         return statuses
 
     def cancel(self, task):
-        pass
+        subprocess.run(['ssh', self.server_user, f'mjobctl -c {task.job_id}'])
+        task.status = TaskStatus.Cancelled
+        task.save()
 
     @staticmethod
     def replace_variables(input_text, task, **kwargs):

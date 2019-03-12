@@ -33,7 +33,6 @@ class Task(BaseModel):
         self.name = name or self.config_file_path.stem
         self.save()  # insert in database
 
-        self.current_state = None
         self.metrics = []
         self.best_epoch = None
 
@@ -43,7 +42,7 @@ class Task(BaseModel):
 
     @property
     def is_running(self):
-        return self.current_state.status == TaskStatus.Running
+        return self.status == TaskStatus.Running
 
     @property
     def stdout_path(self):

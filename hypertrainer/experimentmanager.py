@@ -23,8 +23,9 @@ class ExperimentManager:
                 if len(t) == 0:
                     continue
                 t = t[0]  # type: Task
-                t.status = status
-                t.save()
+                if t.status.is_active():
+                    t.status = status
+                    t.save()
 
     @staticmethod
     def submit(platform: str, script_file: str, config_file: str):
