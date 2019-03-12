@@ -1,6 +1,7 @@
 # FIXME move this code in dashboard.py?
 from hypertrainer.computeplatform import ComputePlatformType, get_platform, TaskState
 from hypertrainer.task import Task
+from hypertrainer.utils import TaskStatus
 
 
 class ExperimentManager:
@@ -14,17 +15,26 @@ class ExperimentManager:
     @staticmethod
     def update_statuses():
         current_platforms = [ComputePlatformType.LOCAL, ComputePlatformType.HELIOS]  # FIXME dynamic
-        for p in current_platforms:
-            tasks = Task.select().where(Task.platform_type == p)
+        for ptype in current_platforms:
+            platform = get_platform(ptype)
+            tasks = Task.select().where(Task.platform_type == ptype)
             job_ids = [t.job_id for t in tasks]
-            statuses = get_platform(p).get_all_statuses(job_ids)
-            for job_id, status in statuses.items():
-                t = tasks.where(Task.job_id == job_id)
-                if len(t) == 0:
-                    continue
-                t = t[0]  # type: Task
+            statuses = platform.get_statuses(job_ids)
+            ccodes = platform.get_completion_codes()  # TODO merge two calls into one get_statuses?
+            for t in tasks:
                 if t.status.is_active():
-                    t.status = status
+                    if t.job_id in ccodes:
+                        # Job just completed
+                        if ccodes[t.job_id] == 0:
+                            t.status = TaskStatus.Finished
+                        else:
+                            t.status = TaskStatus.Crashed
+                    else:
+                        # Job still active (or lost)
+                        if t.job_id in statuses:
+                            t.status = statuses[t.job_id]
+                        else:
+                            t.status = TaskStatus.Lost  # Job not found
                     t.save()
 
     @staticmethod

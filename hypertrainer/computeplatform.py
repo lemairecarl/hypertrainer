@@ -47,7 +47,11 @@ class ComputePlatform(ABC):
         pass
 
     @abstractmethod
-    def get_all_statuses(self, job_ids) -> dict:
+    def get_statuses(self, job_ids) -> dict:
+        pass
+
+    @abstractmethod
+    def get_completion_codes(self) -> dict:
         pass
 
 
@@ -88,7 +92,10 @@ class LocalPlatform(ComputePlatform):
     def cancel(self, task):
         os.kill(int(task.job_id), signal.SIGTERM)
 
-    def get_all_statuses(self, job_ids) -> dict:
+    def get_statuses(self, job_ids) -> dict:
+        return {}  # FIXME
+
+    def get_completion_codes(self) -> dict:
         return {}  # FIXME
 
 
@@ -119,23 +126,40 @@ class HeliosPlatform(ComputePlatform):
     def monitor(self, task, keys=None):
         pass
 
-    def get_all_statuses(self, job_ids):
+    def get_statuses(self, job_ids):
         job_ids_str = ','.join(job_ids)
         data = subprocess.run(['ssh', self.server_user, f'mdiag -j {job_ids_str} | grep $USER'],
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode('utf-8')
-        data_lines = data.strip().split('\n')
+        data_grid = self.parse_columns(data)
         statuses = {}
-        for l in data_lines:
-            cols = l.split()
-            job_id = cols[0]
-            status = cols[1]
+        for l in data_grid:
+            job_id, status = l[0], l[1]
             statuses[job_id] = self.status_map[status]
         return statuses
+
+    def get_completion_codes(self):
+        data = subprocess.run(['ssh', self.server_user, f'showq -u $USER -c | grep $USER'],
+                              stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode('utf-8')
+        data_grid = self.parse_columns(data)
+        ccodes = {}
+        for l in data_grid:
+            job_id, ccode = l[0], l[2]
+            if ccode == 'CNCLD(271)':
+                ccode = 271
+            else:
+                ccode = int(ccode)
+            ccodes[job_id] = ccode
+        return ccodes
 
     def cancel(self, task):
         subprocess.run(['ssh', self.server_user, f'mjobctl -c {task.job_id}'])
         task.status = TaskStatus.Cancelled
         task.save()
+
+    @staticmethod
+    def parse_columns(data):
+        data_lines = data.strip().split('\n')
+        return [l.split() for l in data_lines]
 
     @staticmethod
     def replace_variables(input_text, task, **kwargs):
@@ -160,7 +184,7 @@ class ComputePlatformType(Enum):
     HELIOS = 'helios'
 
 
-platform_instances = {  # TODO should instantiate on-demand
+platform_instances = {
     ComputePlatformType.LOCAL: LocalPlatform(),
     ComputePlatformType.HELIOS: HeliosPlatform()
 }
