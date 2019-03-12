@@ -11,11 +11,29 @@
   table td.Finished { color: #2c662d; background: #fcfff5; }
   table td.Crashed,td.Lost { color: #9f3a38; background: #fff6f6; }
   table td.Cancelled { color: #573a08; background: #fffaf3; }
+  input.toggle-job { margin-right: 0.5em; }
 </style>
 
 <script type="text/javascript">
   $( document ).ready(function() {
     $('table').tablesort()
+    $('thead th.number').data(
+        'sortBy',
+        function(th, td, tablesort) {
+            return parseFloat(td.text());
+        }
+    );
+    $('#checkall').click(function(event) {
+        $('.toggle-job').prop('checked', $(this).prop('checked'));
+        event.stopPropagation();
+    });
+    $('tr').click(function() {
+        checkbox = $('.toggle-job', this);
+        checkbox.prop('checked', !checkbox.prop('checked'));
+    });
+    $('.toggle-job').click(function(event) {
+        event.stopPropagation();
+    });
   });
 </script>
 
@@ -40,6 +58,14 @@
   <form action="/?action=submit" method="post" class="ui form">
     <div class="fields">
       <div class="field">
+        <label for="script">Script</label>
+        <input name="script" id="script" value="dummy.py">
+      </div>
+      <div class="field">
+        <label for="config">Config</label>
+        <input name="config" id="config" value="sample/dummy.yaml">
+      </div>
+      <div class="field">
         <label for="platform">Platform</label>
         <select class="ui dropdown" name="platform" id="platform">
           <option value="">Platform</option>
@@ -47,14 +73,6 @@
             <option value="{{ p }}" {{ 'selected="selected"' if p == 'helios' else '' }}>{{ p }}</option>
           {% endfor %}
         </select>
-      </div>
-      <div class="field">
-        <label for="script">Script</label>
-        <input name="script" id="script" value="dummy.py">
-      </div>
-      <div class="field">
-        <label for="config">Config</label>
-        <input name="config" id="config" value="sample/dummy.yaml">
       </div>
       <div class="field">
         <label>&nbsp;</label>
@@ -66,41 +84,53 @@
 
   <h2>Tasks</h2>
 
-  <p><a href="/">Refresh</a></p>
+  <form action="/?action=bulk" method="post">
+      <p>
+        <a href="/" class="ui compact button basic">Refresh</a>
+        <input type="submit" name="action" value="Cancel" class="ui compact button">
+        <input type="submit" name="action" value="Delete" class="ui compact button">
+      </p>
 
-  <table class="ui sortable celled compact table">
-    <thead><tr>
-      <th>ID</th>
-      <th>Platform</th>
-      <th>PID</th>
-      <th>Name</th>
-      <th>Status</th>
-      <th>Actions</th>
-    </tr></thead>
-    {% if tasks %}
-        {% for task in tasks %}
-          <tr>
-            <td data-label="ID">{{ task.id }}</td>
-            <td data-label="Platform">{{ task.platform_type.value }}</td>
-            <td data-label="job_id">{{ task.job_id }}</td>
-            <td data-label="Name">{{ task.name }}</td>
-            <td data-label="Status" class="{{ task.status.value }}">{{ task.status.value }}</td>
-            <td data-label="Actions">
-              <a href="/monitor/{{ task.id }}" class="ui compact button">Monitor</a>
-              {% if task.is_running %}
-                <a href="/?action=kill&task_id={{ task.id }}" class="ui compact button">Cancel</a>
-              {% endif %}
-            </td>
-          </tr>
-        {% endfor %}
-      {% else %}
-        <tr>
-            <td>No tasks to show.</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-      {% endif %}
-  </table>
+      <table class="ui sortable selectable celled compact table">
+        <thead><tr>
+          <th class="number">
+            <input type="checkbox" class="toggle-job" id="checkall">
+            ID
+          </th>
+          <th>Platform</th>
+          <th>PID</th>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr></thead>
+        {% if tasks %}
+            {% for task in tasks %}
+              <tr>
+                <td>
+                  <input type="checkbox" class="toggle-job" name="check-{{ task.id }}">
+                  {{ task.id }}
+                </td>
+                <td>{{ task.platform_type.value }}</td>
+                <td>{{ task.job_id }}</td>
+                <td>{{ task.name }}</td>
+                <td class="{{ task.status.value }}">{{ task.status.value }}</td>
+                <td>
+                  <a href="/monitor/{{ task.id }}" class="ui compact button">Monitor</a>
+                  {% if task.is_running %}
+                    <a href="/?action=kill&task_id={{ task.id }}" class="ui compact button">Cancel</a>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+                <td>No tasks to show.</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+            </tr>
+          {% endif %}
+      </table>
+  </form>
 </div>

@@ -32,8 +32,25 @@ class ExperimentManager:
 
     @staticmethod
     def cancel_from_id(task_id):
-        t = Task.get(Task.id == task_id)
-        t.cancel()
+        if type(task_id) is str:
+            t = Task.get(Task.id == task_id)
+            if t.status.is_active():
+                t.cancel()
+        else:
+            assert type(task_id) is list
+            tasks = Task.select().where(Task.id.in_(task_id))
+            for t in tasks:
+                if t.status.is_active():
+                    t.cancel()  # TODO one bulk ssh command
+
+    @staticmethod
+    def delete_from_id(task_id):
+        if type(task_id) is str:
+            t = Task.get(Task.id == task_id)  # type: Task
+            t.delete_instance()
+        else:
+            assert type(task_id) is list
+            Task.delete().where(Task.id.in_(task_id)).execute()
 
 
 experiment_manager = ExperimentManager()

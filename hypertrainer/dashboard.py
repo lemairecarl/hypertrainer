@@ -16,6 +16,14 @@ def index():
         return submit()
     elif action == 'kill':
         return kill()
+    elif action == 'bulk':
+        # Bulk action on selected tasks
+        task_ids = [k.split('-')[1] for k, v in request.form.items() if k.startswith('check-') and v]
+        if request.form['action'] == 'Cancel':
+            em.cancel_from_id(task_ids)
+            flash('Cancelled tasks {}.'.format(', '.join(task_ids)))
+        elif request.form['action'] == 'Delete':
+            em.delete_from_id(task_ids)
     elif action is None:
         pass
     else:
