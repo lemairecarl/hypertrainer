@@ -50,10 +50,6 @@ class ComputePlatform(ABC):
     def get_statuses(self, job_ids) -> dict:
         pass
 
-    @abstractmethod
-    def get_completion_codes(self) -> dict:
-        pass
-
 
 class LocalPlatform(ComputePlatform):
     def __init__(self):
@@ -65,38 +61,34 @@ class LocalPlatform(ComputePlatform):
                              stderr=task.stderr_path.open(mode='w'),
                              cwd=os.path.dirname(os.path.realpath(__file__)),
                              universal_newlines=True)
-        self.processes[p.pid] = p
-        return str(p.pid)
+        job_id = str(p.pid)
+        self.processes[job_id] = p
+        return job_id
     
     def monitor(self, task, keys=None) -> TaskState:
-        if keys is not None and (len(keys) >= 2 or 'status' not in keys):
-            raise NotImplementedError
-        
-        p = self.processes.get(int(task.job_id), None)  # type: subprocess.Popen
-        if p is None:
-            return TaskState(status=TaskStatus.Lost)
-
-        poll_result = p.poll()
-        if poll_result is None:
-            status = TaskStatus.Running
-        else:
-            if p.returncode == 0:
-                status = TaskStatus.Finished
-            elif p.returncode < 0:
-                # Negative value: terminated by a signal
-                status = TaskStatus.Cancelled
-            else:
-                status = TaskStatus.Crashed
-        return TaskState(status=status)
+        raise NotImplementedError
 
     def cancel(self, task):
         os.kill(int(task.job_id), signal.SIGTERM)
+        task.status = TaskStatus.Cancelled
+        task.save()
 
     def get_statuses(self, job_ids) -> dict:
-        return {}  # FIXME
-
-    def get_completion_codes(self) -> dict:
-        return {}  # FIXME
+        statuses = {}
+        for job_id in job_ids:
+            p = self.processes.get(job_id)
+            if p is None:
+                statuses[job_id] = TaskStatus.Lost
+                continue
+            poll_result = p.poll()
+            if poll_result is None:
+                statuses[job_id] = TaskStatus.Running
+            else:
+                if p.returncode == 0:
+                    statuses[job_id] = TaskStatus.Finished
+                else:
+                    statuses[job_id] = TaskStatus.Crashed
+        return statuses
 
 
 class HeliosPlatform(ComputePlatform):
@@ -124,9 +116,26 @@ class HeliosPlatform(ComputePlatform):
         return job_id
 
     def monitor(self, task, keys=None):
-        pass
+        raise NotImplementedError
 
     def get_statuses(self, job_ids):
+        statuses = self._get_statuses(job_ids)  # Get statuses of active jobs
+        ccodes = self._get_completion_codes()  # Get statuses for completed jobs
+
+        for job_id in job_ids:
+            if job_id in ccodes:
+                # Job just completed
+                if ccodes[job_id] == 0:
+                    statuses[job_id] = TaskStatus.Finished
+                else:
+                    statuses[job_id] = TaskStatus.Crashed
+            else:
+                # Job still active (or lost)
+                if job_id not in statuses:
+                    statuses[job_id] = TaskStatus.Lost  # Job not found
+        return statuses
+
+    def _get_statuses(self, job_ids):
         job_ids_str = ','.join(job_ids)
         data = subprocess.run(['ssh', self.server_user, f'mdiag -j {job_ids_str} | grep $USER'],
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode('utf-8')
@@ -137,7 +146,7 @@ class HeliosPlatform(ComputePlatform):
             statuses[job_id] = self.status_map[status]
         return statuses
 
-    def get_completion_codes(self):
+    def _get_completion_codes(self):
         data = subprocess.run(['ssh', self.server_user, f'showq -u $USER -c | grep $USER'],
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode('utf-8')
         data_grid = self.parse_columns(data)

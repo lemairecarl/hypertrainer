@@ -20,21 +20,9 @@ class ExperimentManager:
             tasks = Task.select().where(Task.platform_type == ptype)
             job_ids = [t.job_id for t in tasks]
             statuses = platform.get_statuses(job_ids)
-            ccodes = platform.get_completion_codes()  # TODO merge two calls into one get_statuses?
             for t in tasks:
                 if t.status.is_active():
-                    if t.job_id in ccodes:
-                        # Job just completed
-                        if ccodes[t.job_id] == 0:
-                            t.status = TaskStatus.Finished
-                        else:
-                            t.status = TaskStatus.Crashed
-                    else:
-                        # Job still active (or lost)
-                        if t.job_id in statuses:
-                            t.status = statuses[t.job_id]
-                        else:
-                            t.status = TaskStatus.Lost  # Job not found
+                    t.status = statuses[t.job_id]
                     t.save()
 
     @staticmethod
