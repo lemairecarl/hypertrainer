@@ -3,6 +3,14 @@
 Trello board:
 https://trello.com/b/C1VCfrSW/rncan-experiment-manager
 
+## Setup
+
+Since this project depends on https://github.com/Semantic-Org/Semantic-UI-CSS; you will need to run this command:
+
+```
+git submodule update --init --recursive
+```
+
 ## Launching the dashboard
 
 `cd` to the root of this repo and run `start.sh` (make sure it has execute permission). Then, browse to http://localhost:5000.
