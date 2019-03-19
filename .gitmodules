@@ -1,0 +1,3 @@
+[submodule "hypertrainer/static/semantic-ui"]
+	path = hypertrainer/static/semantic-ui
+	url = https://github.com/Semantic-Org/Semantic-UI-CSS.git
