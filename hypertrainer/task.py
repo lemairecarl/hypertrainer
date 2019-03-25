@@ -33,6 +33,7 @@ class Task(BaseModel):
         self.name = name or self.config_file_path.stem
         self.save()  # insert in database
 
+        self.logs = {}
         self.metrics = []
         self.best_epoch = None
 
@@ -57,7 +58,7 @@ class Task(BaseModel):
         return path
 
     @property
-    def output_path(self):
+    def output_path(self) -> str:
         return get_item_at_path(self.config, 'training.output_path')
 
     @output_path.setter
@@ -72,10 +73,8 @@ class Task(BaseModel):
         self.platform.cancel(self)
         # self.save()  # nothing to save
 
-    def get_output(self):
-        # TODO use self.platform
-        # return stdout, stderr as strings
-        return self.stdout_path.read_text(), self.stderr_path.read_text()
+    def monitor(self):
+        self.logs = self.platform.monitor(self)
 
     def dump_config(self):
         return yaml_to_str(self.config, yaml)

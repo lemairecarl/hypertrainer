@@ -3,8 +3,9 @@ import signal
 import subprocess
 from abc import ABC, abstractmethod
 from enum import Enum
-from functools import reduce
 from pathlib import Path
+from glob import glob
+import tempfile
 
 from dataclasses import dataclass
 
@@ -24,20 +25,14 @@ class ComputePlatform(ABC):
     
     @abstractmethod
     def monitor(self, task, keys=None) -> TaskState:
-        """Return information about the task.
-        
-        Methods that override this method are expected to return the following dict:
-        {
-            'status': TaskStatus object
-            'stdout': str containing the whole stdout
-            'stderr': str containing the whole stderr
-            'logs': {
-                'log_filename.extension': str containing the whole log,
-                ...(all other logs)...
-            }
+        """Return a dict of logs.
+
+        Example: {
+            'stdout': '...',
+            'stderr': '...',
+            'trn_classes_score': '...',
+            ...
         }
-        Keys can be a list of dict keys, for example: ['status'], in which case a partial dict is returned. If keys is
-        None, the full dict is returned.
         """
         pass
 
@@ -106,7 +101,7 @@ class HeliosPlatform(ComputePlatform):
         self.setup_template = Path('sample/moab_setup.sh').read_text()
 
     def submit(self, task):
-        job_remote_dir = '$HOME/hypertrainer/jobs/' + str(task.id)
+        job_remote_dir = self._make_job_path(task)
         task.output_path = job_remote_dir
         setup_script = self.replace_variables(self.setup_template, task, submission=self.submission_template)
 
@@ -116,7 +111,14 @@ class HeliosPlatform(ComputePlatform):
         return job_id
 
     def monitor(self, task, keys=None):
-        raise NotImplementedError
+        logs = {}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Get all .txt, .log files in output path
+            subprocess.run(['scp', self.server_user + ':' + self._make_job_path(task) + '/*.{log,txt}', tmpdir])
+            for f in glob(tmpdir + '/*'):
+                p = Path(f)
+                logs[p.stem] = p.read_text()
+        return logs
 
     def get_statuses(self, job_ids):
         statuses = self._get_statuses(job_ids)  # Get statuses of active jobs
@@ -166,7 +168,13 @@ class HeliosPlatform(ComputePlatform):
         task.save()
 
     @staticmethod
+    def _make_job_path(task):
+        return '$HOME/hypertrainer/jobs/' + str(task.id)
+
+    @staticmethod
     def parse_columns(data):
+        if data.strip() == '':
+            return []
         data_lines = data.strip().split('\n')
         return [l.split() for l in data_lines]
 

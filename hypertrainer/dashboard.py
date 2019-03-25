@@ -35,8 +35,12 @@ def index():
 @bp.route('/monitor/<task_id>')
 def monitor(task_id):
     task = Task.get(Task.id == task_id)
-    stdout, stderr = task.get_output()
-    return render_template('monitor.html', task=task, stdout=stdout, stderr=stderr)
+    task.monitor()
+    if 'out' in task.logs:
+        selected_log = 'out'
+    else:
+        selected_log = next(iter(task.logs.keys()))
+    return render_template('monitor.html', task=task, selected_log=selected_log)
 
 
 def submit():

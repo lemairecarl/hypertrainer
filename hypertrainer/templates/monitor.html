@@ -1,12 +1,45 @@
 <!doctype html>
-<title>HyperTrainer Monitor - {{ task.name }}</title>
+<title>HyperTrainer - {{task.name}}</title>
 
-<a href="/">Go back home</a>
+<script type="text/javascript" src="{{ url_for('static', filename='jquery-3.3.1.min.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='semantic-ui/semantic.min.js') }}"></script>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='semantic-ui/semantic.min.css') }}">
 
-<h1>HyperTrainer Monitor</h1>
+<style type="text/css">
+    .tab
+    {
+        height: 60vh;
+        overflow-y: scroll;
+    }
+</style>
 
-<h2>Task: {{ task.name }}</h2>
-<h3>Stdout:</h3>
-<pre>{{ stdout }}</pre>
-<h3>Stderr:</h3>
-<pre>{{ stderr }}</pre>
+<script type="text/javascript">
+  $( document ).ready(function() {
+    $('.tabular.menu .item').tab();
+  });
+</script>
+
+<div class="ui inverted basic segment">
+  <div class="ui container">
+    <h1>HyperTrainer</h1>
+  </div>
+</div>
+
+<div class="ui container">
+
+    <a href="/">Back to dashboard</a>
+
+    <h2>Outputs for: {{task.name}}</h2>
+
+    <div class="ui top attached tabular menu">
+        {% for k in task.logs.keys() %}
+            <a class="item {{'active' if k == selected_log else ''}}" data-tab="{{k}}">{{k}}</a>
+        {% endfor %}
+    </div>
+    {% for k, v in task.logs.items() %}
+        <div class="ui bottom attached tab segment {{'active' if k == selected_log else ''}}" data-tab="{{k}}">
+            <pre>{{v}}</pre>
+        </div>
+    {% endfor %}
+
+</div>
