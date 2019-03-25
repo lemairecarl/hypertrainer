@@ -7,14 +7,7 @@ from pathlib import Path
 from glob import glob
 import tempfile
 
-from dataclasses import dataclass
-
 from hypertrainer.utils import TaskStatus
-
-
-@dataclass
-class TaskState:
-    status: TaskStatus
 
 
 class ComputePlatform(ABC):
@@ -24,7 +17,7 @@ class ComputePlatform(ABC):
         pass
     
     @abstractmethod
-    def monitor(self, task, keys=None) -> TaskState:
+    def monitor(self, task, keys=None):
         """Return a dict of logs.
 
         Example: {
@@ -48,20 +41,42 @@ class ComputePlatform(ABC):
 
 class LocalPlatform(ComputePlatform):
     def __init__(self):
+        # Setup root output dir
+        self.root_dir = os.environ.get('HYPERTRAINER_OUTPUT')
+        if self.root_dir is None:
+            self.root_dir = Path.home() / 'hypertrainer' / 'output'
+            print('Using root output dir: {}\nYou can configure this with $HYPERTRAINER_OUTPUT.'.format(self.root_dir))
+        self.root_dir.mkdir(parents=True, exist_ok=True)
+
         self.processes = {}
     
     def submit(self, task):
-        p = subprocess.Popen(['python', task.script_file, task.config_file],
+        # Setup task dir
+        job_path = self._make_job_path(task)
+        job_path.mkdir(parents=True)
+        task.output_path = str(job_path)
+        config_file = job_path / 'config.yaml'
+        config_file.write_text(task.dump_config())
+        # Launch process
+        script_file_local = task.resolve_path(task.script_file)
+        p = subprocess.Popen(['python', str(script_file_local), str(config_file)],
                              stdout=task.stdout_path.open(mode='w'),
                              stderr=task.stderr_path.open(mode='w'),
-                             cwd=os.path.dirname(os.path.realpath(__file__)),
+                             cwd=os.path.dirname(os.path.realpath(__file__)),  # TODO working dir?
                              universal_newlines=True)
         job_id = str(p.pid)
         self.processes[job_id] = p
         return job_id
     
-    def monitor(self, task, keys=None) -> TaskState:
-        raise NotImplementedError
+    def monitor(self, task, keys=None):
+        job_path = self._make_job_path(task)
+        logs = {}
+        patterns = ('*.log', '*.txt')
+        for pattern in patterns:
+            for f in job_path.glob(pattern):
+                p = Path(f)
+                logs[p.stem] = p.read_text()
+        return logs
 
     def cancel(self, task):
         os.kill(int(task.job_id), signal.SIGTERM)
@@ -84,6 +99,9 @@ class LocalPlatform(ComputePlatform):
                 else:
                     statuses[job_id] = TaskStatus.Crashed
         return statuses
+
+    def _make_job_path(self, task):
+        return self.root_dir / str(task.id)
 
 
 class HeliosPlatform(ComputePlatform):
@@ -114,7 +132,8 @@ class HeliosPlatform(ComputePlatform):
         logs = {}
         with tempfile.TemporaryDirectory() as tmpdir:
             # Get all .txt, .log files in output path
-            subprocess.run(['scp', self.server_user + ':' + self._make_job_path(task) + '/*.{log,txt}', tmpdir])
+            subprocess.run(['scp', self.server_user + ':' + self._make_job_path(task) + '/*.{log,txt}', tmpdir],
+                           stderr=subprocess.DEVNULL)  # Ignore errors (e.g. if *.log doesn't exist)
             for f in glob(tmpdir + '/*'):
                 p = Path(f)
                 logs[p.stem] = p.read_text()
@@ -186,7 +205,7 @@ class HeliosPlatform(ComputePlatform):
             ('$HYPERTRAINER_OUTFILE', task.output_path + '/out.txt'),
             ('$HYPERTRAINER_ERRFILE', task.output_path + '/err.txt'),
             ('$HYPERTRAINER_JOB_DIR', task.output_path),
-            ('$HYPERTRAINER_SCRIPT', f'$HOME/hypertrainer/{task.script_file}'),
+            ('$HYPERTRAINER_SCRIPT', f'$HOME/hypertrainer/scripts/{task.script_file}'),
             ('$HYPERTRAINER_CONFIGFILE', task.output_path + '/config.yaml'),
             ('$HYPERTRAINER_CONFIGDATA', task.dump_config())
         ]

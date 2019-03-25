@@ -15,9 +15,6 @@ ap.add_argument('file')
 args = ap.parse_args()
 
 config = yaml.load(Path(args.file))
-out_filepath = Path(config['output_path']) / 'out.txt'
-err_filepath = Path(config['output_path']) / 'err.txt'
-
 
 print('Input YAML config follows:')
 print(Path(args.file).read_text())

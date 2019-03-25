@@ -43,15 +43,15 @@ def make_info_tables(tables_dict):
 
 
 def yaml_to_str(obj, yaml_engine):
-    class RuamelIsAnnoying:
+    class StringStream:
         out = ''
 
         def write(self, s):
-            RuamelIsAnnoying.out += s.decode('utf-8')
+            StringStream.out += s.decode('utf-8')
 
-    stream = RuamelIsAnnoying()
+    stream = StringStream()
     yaml_engine.dump(obj, stream)
-    return RuamelIsAnnoying.out
+    return StringStream.out
 
 
 class TaskStatus(Enum):

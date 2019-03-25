@@ -2,6 +2,9 @@ from peewee import SqliteDatabase, Model, Field
 import click
 from flask import current_app, g
 from flask.cli import with_appcontext
+from ruamel.yaml import YAML
+
+from hypertrainer.utils import yaml_to_str
 
 
 def init_app(app):
@@ -55,3 +58,13 @@ class EnumField(Field):
 
     def python_value(self, value):
         return self.enum_type(value)
+
+
+class YamlField(Field):
+    yaml = YAML()
+
+    def db_value(self, value):
+        return yaml_to_str(value, self.yaml)
+
+    def python_value(self, value):
+        return self.yaml.load(value)

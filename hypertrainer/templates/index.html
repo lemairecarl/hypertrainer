@@ -34,6 +34,9 @@
     $('.toggle-job').click(function(event) {
         event.stopPropagation();
     });
+    $('.button').click(function(event) {
+        event.stopPropagation();
+    });
   });
 </script>
 
@@ -63,7 +66,7 @@
       </div>
       <div class="field">
         <label for="config">Config</label>
-        <input name="config" id="config" value="sample/dummy.yaml">
+        <input name="config" id="config" value="dummy.yaml">
       </div>
       <div class="field">
         <label for="platform">Platform</label>

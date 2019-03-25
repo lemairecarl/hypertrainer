@@ -1,7 +1,5 @@
-# FIXME move this code in dashboard.py?
-from hypertrainer.computeplatform import ComputePlatformType, get_platform, TaskState
+from hypertrainer.computeplatform import ComputePlatformType, get_platform
 from hypertrainer.task import Task
-from hypertrainer.utils import TaskStatus
 
 
 class ExperimentManager:
