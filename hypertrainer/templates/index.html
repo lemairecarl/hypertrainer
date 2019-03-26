@@ -45,7 +45,7 @@
       </div>
       <div class="field">
         <label for="config">Config</label>
-        <input name="config" id="config" value="epochs.yaml">
+        <input name="config" id="config" value="epochs_test.yaml">
       </div>
       <div class="field">
         <label for="platform">Platform</label>
@@ -84,6 +84,7 @@
           <th>Name</th>
           <th>Status</th>
           <th>Epoch</th>
+          <th>Iteration</th>
           <th>Actions</th>
         </tr></thead>
         {% if tasks %}
@@ -96,8 +97,15 @@
                 <td data-col="platform">{{ task.platform_type.value }}</td>
                 <td>{{ task.job_id }}</td>
                 <td>{{ task.name }}</td>
-                <td data-col="status" class="updating">{{ task.status.value }}<div class="ui active tiny inline loader"></div></td>
-                <td data-col="epoch" class="updating">{{ task.cur_epoch + 1 }} / {{ task.config.training.num_epochs }}<div class="ui active tiny inline loader"></div></td>
+                <td data-col="status" class="{{ 'updating' if task.status.is_active() else task.status.value }}">
+                  {{ task.status.value }}
+                </td>
+                <td data-col="epoch" class="{{ 'updating' if task.status.is_active() else '' }}">
+                  {{ task.cur_epoch + 1 }} / {{ task.config.training.num_epochs }}
+                </td>
+                <td data-col="iteration" class="{{ 'updating' if task.status.is_active() else '' }}">
+                  {{ task.cur_iter + 1 }} / {{ task.iter_per_epoch }}
+                </td>
                 <td>
                   <a href="/monitor/{{ task.id }}" class="ui compact button">Monitor</a>
                 </td>
@@ -106,6 +114,9 @@
           {% else %}
             <tr>
                 <td>No tasks to show.</td>
+                <td></td>
+                <td></td>
+                <td></td>
                 <td></td>
                 <td></td>
                 <td></td>

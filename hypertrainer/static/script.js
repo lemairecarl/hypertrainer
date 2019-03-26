@@ -1,7 +1,8 @@
 function updatePlatform(platform) {
     $.ajax({
         url: "/update/" + platform,
-        cache: false
+        cache: false,
+        timeout: 25000
     })
         .done(function( data ) {
             if( Object.keys(data).length == 0 ) return;
@@ -13,7 +14,13 @@ function updatePlatform(platform) {
                 $("td[data-col='status']", row).html(status).removeClass('updating').addClass(status);
                 // Epoch
                 $("td[data-col='epoch']", row).html((row_data['epoch'] + 1) + ' / ' + row_data['total_epochs']).removeClass('updating');
+                // Iteration
+                $("td[data-col='iteration']", row).html((row_data['iter'] + 1) + ' / ' + row_data['iter_per_epoch']).removeClass('updating');
             }
+        })
+        .fail(function( jqXHR, textStatus ) {
+            console.log('Update request has failed: ' + textStatus);
+            console.log(jqXHR);
         });
 }
 
@@ -40,6 +47,7 @@ $( document ).ready(function() {
         $(this).addClass('loading');
         event.stopPropagation();
     });
+    $('td.updating').append('<div class="ui active tiny inline loader"></div>');
 
     // Update table
     $.ajax({

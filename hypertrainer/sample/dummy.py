@@ -17,6 +17,7 @@ args = ap.parse_args()
 config = yaml.load(Path(args.file))
 output_path = Path(config['training']['output_path'])
 epochs_log = output_path / 'epochs.log'
+iterations_log = output_path / 'iterations.log'
 
 print('Input YAML config follows:')
 print(Path(args.file).read_text())
@@ -27,11 +28,13 @@ secs_per_iter = config.get('secs_per_iter', 1)
 die_after = config.get('die_after', -1)
 print('\nStarting iterations!')
 
-with epochs_log.open('a', buffering=1) as ep_log_file:
+with epochs_log.open('a', buffering=1) as ep_log_file, iterations_log.open('a', buffering=1) as iter_log_file:
     for ep_idx in range(n_epochs):
         ep_log_file.write('{}\t{}\n'.format(ep_idx, time()))
 
         for i in range(n_iter):
+            iter_log_file.write('{}\t{}\t{}\t{}\n'.format(ep_idx, i, n_iter, time()))
+
             if i == die_after:
                 raise RuntimeError('Goodbye cruel world')
             print('Iter {}/{}'.format(i, n_iter), flush=True)

@@ -21,7 +21,6 @@ else:
 SCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
-
 class Task(BaseModel):
     job_id = CharField()
     platform_type = EnumField(ComputePlatformType)
@@ -31,9 +30,10 @@ class Task(BaseModel):
     status = EnumField(TaskStatus)
     cur_epoch = IntegerField()
     cur_iter = IntegerField()
+    iter_per_epoch = IntegerField()
 
     def __init__(self, script_file: str, config, job_id='', platform_type=ComputePlatformType.LOCAL,
-                 name=None, status=TaskStatus.Unknown, cur_epoch=0, cur_iter=0, **kwargs):
+                 name=None, status=TaskStatus.Unknown, cur_epoch=0, cur_iter=0, iter_per_epoch=0, **kwargs):
         super().__init__(**kwargs)
 
         self.job_id = job_id  # Platform specific ID
@@ -42,6 +42,7 @@ class Task(BaseModel):
         self.status = status
         self.cur_epoch = cur_epoch
         self.cur_iter = cur_iter
+        self.iter_per_epoch = iter_per_epoch
 
         if type(config) is str:
             config_file_path = self.resolve_path(config)
@@ -93,9 +94,19 @@ class Task(BaseModel):
         # Update cur_epoch
         if 'epochs' in self.logs:
             lines = self.logs['epochs'].strip().split('\n')
-            if len(lines) > 0:
+            if lines != [] and lines != ['']:
                 ep_idx, timestamp = lines[-1].split()
                 self.cur_epoch = int(ep_idx)
+                self.save()
+
+        # Update iteration
+        if 'iterations' in self.logs:
+            lines = self.logs['iterations'].strip().split('\n')
+            if lines != [] and lines != ['']:
+                ep_idx, iter_idx, iter_per_epoch, timestamp = lines[-1].split()
+                # TODO update epoch here also?
+                self.cur_iter = int(iter_idx)
+                self.iter_per_epoch = int(iter_per_epoch)
                 self.save()
 
     def dump_config(self):

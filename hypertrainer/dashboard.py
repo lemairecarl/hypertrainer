@@ -58,7 +58,9 @@ def update(platform):
         data[t.id] = {
             'status': t.status.value,
             'epoch': t.cur_epoch,
-            'total_epochs': get_item_at_path(t.config, 'training.num_epochs', default=None)
+            'total_epochs': get_item_at_path(t.config, 'training.num_epochs', default=None),
+            'iter': t.cur_iter,
+            'iter_per_epoch': t.iter_per_epoch
         }
     return jsonify(data)
 

@@ -2,6 +2,7 @@ from typing import Union
 
 from hypertrainer.computeplatform import ComputePlatformType, get_platform
 from hypertrainer.task import Task
+from hypertrainer.db import get_db
 
 
 class ExperimentManager:
@@ -27,6 +28,7 @@ class ExperimentManager:
             platform = get_platform(ptype)
             tasks = Task.select().where(Task.platform_type == ptype)
             job_ids = [t.job_id for t in tasks]
+            get_db().close()  # Close db since the following may take time
             statuses = platform.get_statuses(job_ids)
             for t in tasks:
                 if t.status.is_active():
