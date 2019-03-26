@@ -1,5 +1,5 @@
 from flask import (
-    Blueprint, render_template, request, flash, redirect, url_for
+    Blueprint, render_template, request, flash, redirect, url_for, jsonify
 )
 
 from hypertrainer.computeplatform import ComputePlatformType
@@ -41,6 +41,13 @@ def monitor(task_id):
     else:
         selected_log = next(iter(task.logs.keys()))
     return render_template('monitor.html', task=task, selected_log=selected_log)
+
+
+@bp.route('/update/<platform>')
+def update(platform):
+    tasks = em.get_tasks(ComputePlatformType(platform))
+    data = {t.id: t.status.value for t in tasks}
+    return jsonify(data)
 
 
 def submit():

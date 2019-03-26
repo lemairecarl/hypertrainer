@@ -1,3 +1,5 @@
+from typing import Union
+
 from hypertrainer.computeplatform import ComputePlatformType, get_platform
 from hypertrainer.task import Task
 
@@ -5,15 +7,20 @@ from hypertrainer.task import Task
 class ExperimentManager:
     @staticmethod
     def get_all_tasks():
-        # FIXME more efficient db usage
-        ExperimentManager.update_statuses()
+        # NOTE: statuses are not updated here; they are requested asynchronously by the dashboard
         all_tasks = list(Task.select())
         return all_tasks
 
     @staticmethod
-    def update_statuses():
-        current_platforms = [ComputePlatformType.LOCAL, ComputePlatformType.HELIOS]  # FIXME dynamic
-        for ptype in current_platforms:
+    def get_tasks(platform: ComputePlatformType):
+        ExperimentManager.update_statuses(platforms=[platform])
+        return Task.select().where(Task.platform_type == platform)
+
+    @staticmethod
+    def update_statuses(platforms: Union[str, list] = 'all'):
+        if platforms == 'all':
+            platforms = [ComputePlatformType.LOCAL, ComputePlatformType.HELIOS]  # FIXME dynamic
+        for ptype in platforms:
             platform = get_platform(ptype)
             tasks = Task.select().where(Task.platform_type == ptype)
             job_ids = [t.job_id for t in tasks]

@@ -4,6 +4,8 @@
 <script type="text/javascript" src="static/jquery-3.3.1.min.js"></script>
 <script type="text/javascript" src="static/tablesort.js"></script>
 <script type="text/javascript" src="static/semantic-ui/semantic.min.js"></script>
+<script type="text/javascript" src="static/script.js"></script>
+
 <link rel="stylesheet" type="text/css" href="static/semantic-ui/semantic.min.css">
 
 <style type="text/css">
@@ -13,32 +15,6 @@
   table td.Cancelled { color: #573a08; background: #fffaf3; }
   input.toggle-job { margin-right: 0.5em; }
 </style>
-
-<script type="text/javascript">
-  $( document ).ready(function() {
-    $('table').tablesort()
-    $('thead th.number').data(
-        'sortBy',
-        function(th, td, tablesort) {
-            return parseFloat(td.text());
-        }
-    );
-    $('#checkall').click(function(event) {
-        $('.toggle-job').prop('checked', $(this).prop('checked'));
-        event.stopPropagation();
-    });
-    $('tr').click(function() {
-        checkbox = $('.toggle-job', this);
-        checkbox.prop('checked', !checkbox.prop('checked'));
-    });
-    $('.toggle-job').click(function(event) {
-        event.stopPropagation();
-    });
-    $('.button').click(function(event) {
-        event.stopPropagation();
-    });
-  });
-</script>
 
 <div class="ui inverted basic segment">
   <div class="ui container">
@@ -94,7 +70,7 @@
         <input type="submit" name="action" value="Delete" class="ui compact button">
       </p>
 
-      <table class="ui sortable selectable celled compact table">
+      <table class="ui sortable selectable celled compact table" id="tasks">
         <thead><tr>
           <th class="number">
             <input type="checkbox" class="toggle-job" id="checkall">
@@ -108,15 +84,15 @@
         </tr></thead>
         {% if tasks %}
             {% for task in tasks %}
-              <tr>
+              <tr data-id="{{ task.id }}">
                 <td>
                   <input type="checkbox" class="toggle-job" name="check-{{ task.id }}">
                   {{ task.id }}
                 </td>
-                <td>{{ task.platform_type.value }}</td>
+                <td data-col="platform">{{ task.platform_type.value }}</td>
                 <td>{{ task.job_id }}</td>
                 <td>{{ task.name }}</td>
-                <td class="{{ task.status.value }}">{{ task.status.value }}</td>
+                <td data-col="status" class="status-loading">Loading...</td>
                 <td>
                   <a href="/monitor/{{ task.id }}" class="ui compact button">Monitor</a>
                   {% if task.is_running %}
