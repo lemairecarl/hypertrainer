@@ -5,6 +5,7 @@ from flask import (
 from hypertrainer.computeplatform import ComputePlatformType
 from hypertrainer.task import Task
 from hypertrainer.experimentmanager import experiment_manager as em
+from hypertrainer.utils import get_item_at_path
 
 bp = Blueprint('dashboard', __name__)
 
@@ -46,12 +47,19 @@ def monitor(task_id):
 @bp.route('/enum')
 def enum_platforms():
     return jsonify([p.value for p in ComputePlatformType])
+    # return jsonify(['local'])
 
 
 @bp.route('/update/<platform>')
 def update(platform):
     tasks = em.get_tasks(ComputePlatformType(platform))
-    data = {t.id: t.status.value for t in tasks}
+    data = {}
+    for t in tasks:
+        data[t.id] = {
+            'status': t.status.value,
+            'epoch': t.cur_epoch,
+            'total_epochs': get_item_at_path(t.config, 'training.num_epochs', default=None)
+        }
     return jsonify(data)
 
 

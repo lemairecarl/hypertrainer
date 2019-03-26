@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from ruamel.yaml import YAML
-from peewee import CharField
+from peewee import CharField, IntegerField
 
 from hypertrainer.computeplatform import ComputePlatformType, get_platform
 from hypertrainer.db import BaseModel, EnumField, YamlField
@@ -29,15 +29,19 @@ class Task(BaseModel):
     config = YamlField()
     name = CharField()
     status = EnumField(TaskStatus)
+    cur_epoch = IntegerField()
+    cur_iter = IntegerField()
 
     def __init__(self, script_file: str, config, job_id='', platform_type=ComputePlatformType.LOCAL,
-                 name=None, status=TaskStatus.Unknown, **kwargs):
+                 name=None, status=TaskStatus.Unknown, cur_epoch=0, cur_iter=0, **kwargs):
         super().__init__(**kwargs)
 
         self.job_id = job_id  # Platform specific ID
         self.platform_type = platform_type
         self.script_file = script_file
         self.status = status
+        self.cur_epoch = cur_epoch
+        self.cur_iter = cur_iter
 
         if type(config) is str:
             config_file_path = self.resolve_path(config)
@@ -49,8 +53,6 @@ class Task(BaseModel):
             self.name = name
 
         self.logs = {}
-        self.metrics = []
-        self.best_epoch = None
 
     @property
     def platform(self):
@@ -87,6 +89,14 @@ class Task(BaseModel):
 
     def monitor(self):
         self.logs = self.platform.monitor(self)
+
+        # Update cur_epoch
+        if 'epochs' in self.logs:
+            lines = self.logs['epochs'].strip().split('\n')
+            if len(lines) > 0:
+                ep_idx, timestamp = lines[-1].split()
+                self.cur_epoch = int(ep_idx)
+                self.save()
 
     def dump_config(self):
         return yaml_to_str(self.config, yaml)

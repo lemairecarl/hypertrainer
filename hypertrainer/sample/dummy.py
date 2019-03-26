@@ -4,7 +4,7 @@ Prints a file to stdout, sleeps for some time and exits.
 
 import argparse
 from pathlib import Path
-from time import sleep
+from time import sleep, time
 
 from ruamel.yaml import YAML
 
@@ -15,17 +15,26 @@ ap.add_argument('file')
 args = ap.parse_args()
 
 config = yaml.load(Path(args.file))
+output_path = Path(config['training']['output_path'])
+epochs_log = output_path / 'epochs.log'
 
 print('Input YAML config follows:')
 print(Path(args.file).read_text())
 
+n_epochs = config['training'].get('num_epochs', 1)
 n_iter = config.get('n_iter', 20)
 secs_per_iter = config.get('secs_per_iter', 1)
 die_after = config.get('die_after', -1)
 print('\nStarting iterations!')
-for i in range(n_iter):
-    if i == die_after:
-        raise RuntimeError('Goodbye cruel world')
-    print('Iter {}/{}'.format(i, n_iter), flush=True)
-    sleep(secs_per_iter)
+
+with epochs_log.open('a', buffering=1) as ep_log_file:
+    for ep_idx in range(n_epochs):
+        ep_log_file.write('{}\t{}\n'.format(ep_idx, time()))
+
+        for i in range(n_iter):
+            if i == die_after:
+                raise RuntimeError('Goodbye cruel world')
+            print('Iter {}/{}'.format(i, n_iter), flush=True)
+            sleep(secs_per_iter)
+
 print('Done.')

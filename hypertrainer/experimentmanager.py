@@ -13,8 +13,11 @@ class ExperimentManager:
 
     @staticmethod
     def get_tasks(platform: ComputePlatformType):
-        ExperimentManager.update_statuses(platforms=[platform])
-        return Task.select().where(Task.platform_type == platform)
+        ExperimentManager.update_statuses(platforms=[platform])  # TODO return tasks to avoid other db query?
+        tasks = Task.select().where(Task.platform_type == platform)
+        for t in tasks:
+            t.monitor()
+        return tasks
 
     @staticmethod
     def update_statuses(platforms: Union[str, list] = 'all'):

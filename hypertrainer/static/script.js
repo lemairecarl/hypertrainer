@@ -4,11 +4,16 @@ function updatePlatform(platform) {
         cache: false
     })
         .done(function( data ) {
-            $("table#tasks tr").each(function(){
-                value = data[$(this).attr('data-id')];
-                $("td[data-col='status']", this).html(value);
-                $("td[data-col='status']", this).addClass(value);
-            });
+            if( Object.keys(data).length == 0 ) return;
+            for (var task_id in data) {
+                row = $("tr[data-id='" + task_id + "']")
+                row_data = data[task_id]
+                // Status
+                status = row_data['status'];
+                $("td[data-col='status']", row).html(status).removeClass('updating').addClass(status);
+                // Epoch
+                $("td[data-col='epoch']", row).html((row_data['epoch'] + 1) + ' / ' + row_data['total_epochs']).removeClass('updating');
+            }
         });
 }
 
