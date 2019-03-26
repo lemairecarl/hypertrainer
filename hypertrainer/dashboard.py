@@ -43,6 +43,11 @@ def monitor(task_id):
     return render_template('monitor.html', task=task, selected_log=selected_log)
 
 
+@bp.route('/enum')
+def enum_platforms():
+    return jsonify([p.value for p in ComputePlatformType])
+
+
 @bp.route('/update/<platform>')
 def update(platform):
     tasks = em.get_tasks(ComputePlatformType(platform))

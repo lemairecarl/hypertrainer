@@ -32,9 +32,18 @@ $( document ).ready(function() {
         event.stopPropagation();
     });
     $('.button').click(function(event) {
+        $(this).addClass('loading');
         event.stopPropagation();
     });
 
-    updatePlatform('local');
-    updatePlatform('helios');
+    // Update table
+    $.ajax({
+        url: "/enum",
+        cache: false
+    })
+        .done(function( platform_names ) {
+            platform_names.forEach(function(p){
+                updatePlatform(p);
+            });
+        });
 });

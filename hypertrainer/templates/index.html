@@ -14,6 +14,7 @@
   table td.Crashed,td.Lost { color: #9f3a38; background: #fff6f6; }
   table td.Cancelled { color: #573a08; background: #fffaf3; }
   input.toggle-job { margin-right: 0.5em; }
+  div.loader.inline { margin-left: 1em !important; }
 </style>
 
 <div class="ui inverted basic segment">
@@ -55,7 +56,7 @@
       </div>
       <div class="field">
         <label>&nbsp;</label>
-        <input type="submit" value="Submit" class="ui submit button">
+        <button type="submit" class="ui submit button">Submit</button>
       </div>
     </div>
   </form>
@@ -70,7 +71,7 @@
         <input type="submit" name="action" value="Delete" class="ui compact button">
       </p>
 
-      <table class="ui sortable selectable celled compact table" id="tasks">
+      <table class="ui sortable selectable celled compact table fixed" id="tasks">
         <thead><tr>
           <th class="number">
             <input type="checkbox" class="toggle-job" id="checkall">
@@ -92,7 +93,7 @@
                 <td data-col="platform">{{ task.platform_type.value }}</td>
                 <td>{{ task.job_id }}</td>
                 <td>{{ task.name }}</td>
-                <td data-col="status" class="status-loading">Loading...</td>
+                <td data-col="status" class="{{ task.status.value }}">{{ task.status.value }}<div class="ui active tiny inline loader"></div></td>
                 <td>
                   <a href="/monitor/{{ task.id }}" class="ui compact button">Monitor</a>
                   {% if task.is_running %}
