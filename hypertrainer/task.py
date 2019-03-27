@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 from ruamel.yaml import YAML
-from peewee import CharField, IntegerField
+from peewee import CharField, IntegerField, FloatField
 
 from hypertrainer.computeplatform import ComputePlatformType, get_platform
 from hypertrainer.db import BaseModel, EnumField, YamlField
@@ -22,27 +22,28 @@ SCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 class Task(BaseModel):
-    job_id = CharField()
-    platform_type = EnumField(ComputePlatformType)
     script_file = CharField()  # Relative to the scripts folder, that exists on all platforms TODO document this
     config = YamlField()
-    name = CharField()
-    status = EnumField(TaskStatus)
-    cur_epoch = IntegerField()
-    cur_iter = IntegerField()
-    iter_per_epoch = IntegerField()
+    job_id = CharField(default='')
+    platform_type = EnumField(ComputePlatformType, default=ComputePlatformType.LOCAL)
+    name = CharField(default='')
+    status = EnumField(TaskStatus, default=TaskStatus.Unknown)
+    cur_epoch = IntegerField(default=0)
+    cur_iter = IntegerField(default=0)
+    iter_per_epoch = IntegerField(default=0)
+    epoch_duration = FloatField(default=0)
 
-    def __init__(self, script_file: str, config, job_id='', platform_type=ComputePlatformType.LOCAL,
-                 name=None, status=TaskStatus.Unknown, cur_epoch=0, cur_iter=0, iter_per_epoch=0, **kwargs):
+    def __init__(self, script_file: str, config, **kwargs):
         super().__init__(**kwargs)
 
-        self.job_id = job_id  # Platform specific ID
-        self.platform_type = platform_type
         self.script_file = script_file
-        self.status = status
-        self.cur_epoch = cur_epoch
-        self.cur_iter = cur_iter
-        self.iter_per_epoch = iter_per_epoch
+        self.job_id = kwargs['job_id']  # Platform specific ID
+        self.platform_type = kwargs['platform_type']
+        self.status = kwargs['status']
+        self.cur_epoch = kwargs['cur_epoch']
+        self.cur_iter = kwargs['cur_iter']
+        self.iter_per_epoch = kwargs['iter_per_epoch']
+        self.epoch_duration = kwargs['epoch_duration']
 
         if type(config) is str:
             config_file_path = self.resolve_path(config)
@@ -51,7 +52,7 @@ class Task(BaseModel):
             self.save()  # insert in database
         else:
             self.config = config
-            self.name = name
+            self.name = kwargs['name']
 
         self.logs = {}
 
