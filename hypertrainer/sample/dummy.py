@@ -4,6 +4,7 @@ Prints a file to stdout, sleeps for some time and exits.
 
 import argparse
 from pathlib import Path
+from random import random
 from time import sleep, time
 
 from ruamel.yaml import YAML
@@ -18,6 +19,7 @@ config = yaml.load(Path(args.file))
 output_path = Path(config['training']['output_path'])
 epochs_log = output_path / 'epochs.log'
 iterations_log = output_path / 'iterations.log'
+loss_log = output_path / 'metric_loss.log'
 
 print('Input YAML config follows:')
 print(Path(args.file).read_text())
@@ -28,7 +30,10 @@ secs_per_iter = config.get('secs_per_iter', 1)
 die_after = config.get('die_after', -1)
 print('\nStarting iterations!')
 
-with epochs_log.open('a', buffering=1) as ep_log_file, iterations_log.open('a', buffering=1) as iter_log_file:
+with epochs_log.open('a', buffering=1) as ep_log_file, \
+        iterations_log.open('a', buffering=1) as iter_log_file, \
+        loss_log.open('a', buffering=1) as loss_file:
+
     for ep_idx in range(n_epochs):
         ep_log_file.write('{}\t{}\n'.format(ep_idx, time()))
 
@@ -39,5 +44,7 @@ with epochs_log.open('a', buffering=1) as ep_log_file, iterations_log.open('a', 
                 raise RuntimeError('Goodbye cruel world')
             print('Iter {}/{}'.format(i, n_iter), flush=True)
             sleep(secs_per_iter)
+
+        loss_file.write('{}\t{}\n'.format(ep_idx, random()))
 
 print('Done.')

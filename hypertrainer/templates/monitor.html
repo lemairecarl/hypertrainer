@@ -38,19 +38,21 @@
     <h2>Outputs for: "{{task.name}}"</h2>
 
     <div class="ui top attached tabular menu">
-        <a class="item active" data-tab="visualize">Visualize</a>
+        {% if viz_scripts %}<a class="item active" data-tab="visualize">Visualize</a>{% endif %}
         {% for k in task.logs.keys() %}
-            <a class="item" data-tab="{{k}}">{{k}}</a>
+            <a class="item {{ 'active' if not viz_scripts and k == 'out' else ''}}" data-tab="{{k}}">{{k}}</a>
         {% endfor %}
     </div>
-    <div class="ui bottom attached tab segment active" data-tab="visualize">
-        {{ viz_scripts | safe }}
-        {% for name, div_html in viz_divs.items() %}
-            {{ div_html | safe }}
-        {% endfor %}
-    </div>
+    {% if viz_scripts %}
+        <div class="ui bottom attached tab segment active" data-tab="visualize">
+            {{ viz_scripts | safe }}
+            {% for name, div_html in viz_divs.items() %}
+                {{ div_html | safe }}
+            {% endfor %}
+        </div>
+    {% endif %}
     {% for k, v in task.logs.items() %}
-        <div class="ui bottom attached tab segment" data-tab="{{k}}">
+        <div class="ui bottom attached tab segment {{ 'active' if not viz_scripts and k == 'out' else ''}}" data-tab="{{k}}">
             <pre>{{v}}</pre>
         </div>
     {% endfor %}

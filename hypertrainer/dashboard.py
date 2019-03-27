@@ -45,7 +45,9 @@ def monitor(task_id):
     else:
         selected_log = next(iter(task.logs.keys()))
 
-    viz_scripts, viz_divs = viz.test()
+    viz_scripts, viz_divs = None, None
+    if len(task.metrics) > 0:
+        viz_scripts, viz_divs = viz.generate_plots(task.metrics)
 
     return render_template('monitor.html', task=task, selected_log=selected_log,
                            viz_scripts=viz_scripts, viz_divs=viz_divs)

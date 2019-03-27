@@ -7,7 +7,7 @@ from pathlib import Path
 from glob import glob
 import tempfile
 
-from hypertrainer.utils import TaskStatus
+from hypertrainer.utils import TaskStatus, parse_columns
 
 
 class ComputePlatform(ABC):
@@ -165,7 +165,7 @@ class HeliosPlatform(ComputePlatform):
         job_ids_str = ','.join(job_ids)
         data = subprocess.run(['ssh', self.server_user, f'mdiag -j {job_ids_str} | grep $USER'],
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode('utf-8')
-        data_grid = self.parse_columns(data)
+        data_grid = parse_columns(data)
         statuses = {}
         for l in data_grid:
             job_id, status = l[0], l[1]
@@ -175,7 +175,7 @@ class HeliosPlatform(ComputePlatform):
     def _get_completion_codes(self):
         data = subprocess.run(['ssh', self.server_user, f'showq -u $USER -c | grep $USER'],
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode('utf-8')
-        data_grid = self.parse_columns(data)
+        data_grid = parse_columns(data)
         ccodes = {}
         for l in data_grid:
             job_id, ccode = l[0], l[2]
@@ -194,13 +194,6 @@ class HeliosPlatform(ComputePlatform):
     @staticmethod
     def _make_job_path(task):
         return '$HOME/hypertrainer/jobs/' + str(task.id)
-
-    @staticmethod
-    def parse_columns(data):
-        if data.strip() == '':
-            return []
-        data_lines = data.strip().split('\n')
-        return [l.split() for l in data_lines]
 
     @staticmethod
     def replace_variables(input_text, task, **kwargs):

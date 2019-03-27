@@ -8,7 +8,7 @@ from peewee import CharField, IntegerField, FloatField
 
 from hypertrainer.computeplatform import ComputePlatformType, get_platform
 from hypertrainer.db import BaseModel, EnumField, YamlField
-from hypertrainer.utils import TaskStatus, set_item_at_path, get_item_at_path, yaml_to_str
+from hypertrainer.utils import TaskStatus, set_item_at_path, get_item_at_path, yaml_to_str, parse_columns
 
 yaml = YAML()
 
@@ -48,6 +48,7 @@ class Task(BaseModel):
             self.name = kwargs['name']
 
         self.logs = {}
+        self.metrics = {}
         self.total_time_remain = -1
         self.ep_time_remain = -1
 
@@ -86,33 +87,45 @@ class Task(BaseModel):
         self.save()
 
     def monitor(self):
+        # Retrieve logs
         self.logs = self.platform.monitor(self)
 
-        # Update cur_epoch
-        if 'epochs' in self.logs:
-            lines = self.logs['epochs'].strip().split('\n')
-            if lines != [] and lines != ['']:
-                array = [list(map(float, l.split())) for l in lines]  # split fields and convert to float
-                array = np.array(array)
-                self.cur_epoch = int(array[-1, 0])
-                if len(array) > 1:
-                    durations = array[1:, 1] - array[:-1, 1]
-                    self.epoch_duration = np.mean(durations)  # TODO more weight to last epochs?
-                    elapsed = time() - array[-1, 1]
-                    self.ep_time_remain = max(self.epoch_duration - elapsed, 0)
-                    self.total_time_remain = self.ep_time_remain + self.epoch_duration * (
-                            get_item_at_path(self.config, 'training.num_epochs') - self.cur_epoch - 1)
-                self.save()
+        # Interpret logs
+        for name, log in self.logs.items():
+            if name == 'epochs':
+                # Columns: epoch_idx, unix_timestamp
+                data = parse_columns(log)
+                if data:  # if not empty
+                    array = np.array(data, dtype=np.float)
+                    self.cur_epoch = int(array[-1, 0])
+                    if len(array) > 1:
+                        durations = array[1:, 1] - array[:-1, 1]
+                        self.epoch_duration = np.mean(durations)  # TODO more weight to last epochs?
+                        elapsed = time() - array[-1, 1]
+                        self.ep_time_remain = max(self.epoch_duration - elapsed, 0)
+                        self.total_time_remain = self.ep_time_remain + self.epoch_duration * (
+                                get_item_at_path(self.config, 'training.num_epochs') - self.cur_epoch - 1)
+                    self.save()
 
-        # Update iteration
-        if 'iterations' in self.logs:
-            lines = self.logs['iterations'].strip().split('\n')
-            if lines != [] and lines != ['']:
-                ep_idx, iter_idx, iter_per_epoch, timestamp = lines[-1].split()
-                # TODO update epoch here also?
-                self.cur_iter = int(iter_idx)
-                self.iter_per_epoch = int(iter_per_epoch)
-                self.save()
+            elif name == 'iterations':
+                # Columns = epoch_idx, iter_idx, iter_per_epoch, unix_timestamp
+                data = parse_columns(log)
+                if data:
+                    ep_idx, iter_idx, iter_per_epoch, timestamp = data[-1]
+                    # TODO update epoch here instead? (removing need for epochs.log)
+                    self.cur_iter = int(iter_idx)
+                    self.iter_per_epoch = int(iter_per_epoch)
+                    self.save()
+
+            elif name.startswith('metric_classwise_'):
+                pass  # TODO
+
+            elif name.startswith('metric_'):
+                # Columns: epoch_idx, value
+                data = parse_columns(log)
+                if data:
+                    m_name = name.partition('_')[2]  # Example: 'd_j_trump'.partition('_') -> ('d', '_', 'j_trump')
+                    self.metrics[m_name] = np.array(data, dtype=np.float)
 
     def dump_config(self):
         return yaml_to_str(self.config, yaml)
