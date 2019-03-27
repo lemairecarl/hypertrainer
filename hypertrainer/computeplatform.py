@@ -53,7 +53,7 @@ class LocalPlatform(ComputePlatform):
     def submit(self, task):
         # Setup task dir
         job_path = self._make_job_path(task)
-        job_path.mkdir(parents=True)
+        job_path.mkdir(parents=True, exist_ok=False)
         task.output_path = str(job_path)
         config_file = job_path / 'config.yaml'
         config_file.write_text(task.dump_config())
@@ -123,8 +123,13 @@ class HeliosPlatform(ComputePlatform):
         task.output_path = job_remote_dir
         setup_script = self.replace_variables(self.setup_template, task, submission=self.submission_template)
 
-        completed_process = subprocess.run(['ssh', self.server_user],
-                                           input=setup_script.encode(), stdout=subprocess.PIPE)
+        try:
+            completed_process = subprocess.run(['ssh', self.server_user],
+                                               input=setup_script.encode(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            completed_process.check_returncode()
+        except subprocess.CalledProcessError:
+            print(completed_process.stderr)
+            raise  # FIXME handle error
         job_id = completed_process.stdout.decode('utf-8').strip()
         return job_id
 
