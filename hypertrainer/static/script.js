@@ -47,8 +47,8 @@ $( document ).ready(function() {
         event.stopPropagation();
     });
     $('tr').click(function() {
-        checkbox = $('.toggle-job', this);
-        checkbox.prop('checked', !checkbox.prop('checked'));
+        // checkbox = $('.toggle-job', this);
+        // checkbox.prop('checked', !checkbox.prop('checked'));
 
         // Handle new selection
         $('.selected').removeClass('selected');

@@ -15,7 +15,8 @@
   table td.Crashed,td.Lost { color: #9f3a38; background: #fff6f6; }
   table td.Cancelled { color: #573a08; background: #fffaf3; }
   table td.updating { color: #bbb }
-  table tr.selected { background-color: #dadaff }
+  table tr.selectable:hover { background-color: #ececec }
+  table tr.selected { background-color: #dadaff !important }
   input.toggle-job { margin-right: 0.5em; }
   div.loader.inline { margin-left: 1em !important; }
 </style>
@@ -75,7 +76,7 @@
         <input type="submit" name="action" value="Delete" class="ui compact button">
       </p>
 
-      <table class="ui sortable selectable celled compact table fixed" id="tasks">
+      <table class="ui sortable celled compact table fixed" id="tasks">
         <thead><tr>
           <th class="number">
             <input type="checkbox" class="toggle-job" id="checkall">
@@ -92,7 +93,7 @@
         </tr></thead>
         {% if tasks %}
             {% for task in tasks %}
-              <tr data-id="{{ task.id }}">
+              <tr data-id="{{ task.id }}" class="selectable">
                 <td>
                   <input type="checkbox" class="toggle-job" name="check-{{ task.id }}">
                   {{ task.id }}
@@ -106,9 +107,7 @@
                 <td data-col="epoch" class="{{ 'updating' if task.status.is_active() else '' }}">
                   {{ task.cur_epoch + 1 }} / {{ task.config.training.num_epochs }}
                 </td>
-                <td data-col="iteration" class="{{ 'updating' if task.status.is_active() else '' }}">
-                  {{ task.cur_iter + 1 }} / {{ task.iter_per_epoch }}
-                </td>
+                <td data-col="iteration" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
                 <td data-col="total_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
                 <td data-col="ep_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
               </tr>
