@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
+from time import time
 
+import numpy as np
 from ruamel.yaml import YAML
 from peewee import CharField, IntegerField, FloatField
 
@@ -46,6 +48,8 @@ class Task(BaseModel):
             self.name = kwargs['name']
 
         self.logs = {}
+        self.total_time_remain = -1
+        self.ep_time_remain = -1
 
     @property
     def platform(self):
@@ -88,8 +92,16 @@ class Task(BaseModel):
         if 'epochs' in self.logs:
             lines = self.logs['epochs'].strip().split('\n')
             if lines != [] and lines != ['']:
-                ep_idx, timestamp = lines[-1].split()
-                self.cur_epoch = int(ep_idx)
+                array = [list(map(float, l.split())) for l in lines]  # split fields and convert to float
+                array = np.array(array)
+                self.cur_epoch = int(array[-1, 0])
+                if len(array) > 1:
+                    durations = array[1:, 1] - array[:-1, 1]
+                    self.epoch_duration = np.mean(durations)  # TODO more weight to last epochs?
+                    elapsed = time() - array[-1, 1]
+                    self.ep_time_remain = max(self.epoch_duration - elapsed, 0)
+                    self.total_time_remain = self.ep_time_remain + self.epoch_duration * (
+                            get_item_at_path(self.config, 'training.num_epochs') - self.cur_epoch - 1)
                 self.save()
 
         # Update iteration

@@ -85,6 +85,8 @@
           <th>Status</th>
           <th>Epoch</th>
           <th>Iteration</th>
+          <th>Total TR</th>
+          <th>Epoch TR</th>
           <th>Actions</th>
         </tr></thead>
         {% if tasks %}
@@ -106,6 +108,8 @@
                 <td data-col="iteration" class="{{ 'updating' if task.status.is_active() else '' }}">
                   {{ task.cur_iter + 1 }} / {{ task.iter_per_epoch }}
                 </td>
+                <td data-col="total_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
+                <td data-col="ep_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
                 <td>
                   <a href="/monitor/{{ task.id }}" class="ui compact button">Monitor</a>
                 </td>
@@ -114,6 +118,8 @@
           {% else %}
             <tr>
                 <td>No tasks to show.</td>
+                <td></td>
+                <td></td>
                 <td></td>
                 <td></td>
                 <td></td>

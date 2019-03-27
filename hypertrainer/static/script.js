@@ -16,6 +16,16 @@ function updatePlatform(platform) {
                 $("td[data-col='epoch']", row).html((row_data['epoch'] + 1) + ' / ' + row_data['total_epochs']).removeClass('updating');
                 // Iteration
                 $("td[data-col='iteration']", row).html((row_data['iter'] + 1) + ' / ' + row_data['iter_per_epoch']).removeClass('updating');
+                if (row_data['epoch'] > 0) {
+                    // Total time remain
+                    $("td[data-col='total_time_remain']", row).html(row_data['total_time_remain']).removeClass('updating');
+                    // Epoch time remain
+                    $("td[data-col='ep_time_remain']", row).html(row_data['ep_time_remain']).removeClass('updating');
+                } else {
+                    // First epoch, cannot compute remaining time
+                    $("td[data-col='total_time_remain']", row).empty().removeClass('updating');
+                    $("td[data-col='ep_time_remain']", row).empty().removeClass('updating');
+                }
             }
         })
         .fail(function( jqXHR, textStatus ) {

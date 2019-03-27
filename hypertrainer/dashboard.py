@@ -1,3 +1,5 @@
+import datetime
+
 from flask import (
     Blueprint, render_template, request, flash, redirect, url_for, jsonify
 )
@@ -60,7 +62,9 @@ def update(platform):
             'epoch': t.cur_epoch,
             'total_epochs': get_item_at_path(t.config, 'training.num_epochs', default=None),
             'iter': t.cur_iter,
-            'iter_per_epoch': t.iter_per_epoch
+            'iter_per_epoch': t.iter_per_epoch,
+            'ep_time_remain': str(datetime.timedelta(seconds=int(t.ep_time_remain))),
+            'total_time_remain': str(datetime.timedelta(seconds=int(t.total_time_remain)))
         }
     return jsonify(data)
 
