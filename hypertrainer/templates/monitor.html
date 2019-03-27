@@ -4,12 +4,18 @@
 <script type="text/javascript" src="{{ url_for('static', filename='jquery-3.3.1.min.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='semantic-ui/semantic.min.js') }}"></script>
 <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='semantic-ui/semantic.min.css') }}">
+<link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.css" type="text/css" />
+<script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.js"></script>
 
 <style type="text/css">
     .tab
     {
         height: 60vh;
         overflow-y: scroll;
+    }
+    .bk-root
+    {
+        display: inline-block;
     }
 </style>
 
@@ -32,12 +38,19 @@
     <h2>Outputs for: "{{task.name}}"</h2>
 
     <div class="ui top attached tabular menu">
+        <a class="item active" data-tab="visualize">Visualize</a>
         {% for k in task.logs.keys() %}
-            <a class="item {{'active' if k == selected_log else ''}}" data-tab="{{k}}">{{k}}</a>
+            <a class="item" data-tab="{{k}}">{{k}}</a>
+        {% endfor %}
+    </div>
+    <div class="ui bottom attached tab segment active" data-tab="visualize">
+        {{ viz_scripts | safe }}
+        {% for name, div_html in viz_divs.items() %}
+            {{ div_html | safe }}
         {% endfor %}
     </div>
     {% for k, v in task.logs.items() %}
-        <div class="ui bottom attached tab segment {{'active' if k == selected_log else ''}}" data-tab="{{k}}">
+        <div class="ui bottom attached tab segment" data-tab="{{k}}">
             <pre>{{v}}</pre>
         </div>
     {% endfor %}

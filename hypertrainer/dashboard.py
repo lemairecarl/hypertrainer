@@ -4,6 +4,7 @@ from flask import (
     Blueprint, render_template, request, flash, redirect, url_for, jsonify
 )
 
+from hypertrainer import viz
 from hypertrainer.computeplatform import ComputePlatformType
 from hypertrainer.task import Task
 from hypertrainer.experimentmanager import experiment_manager as em
@@ -43,7 +44,11 @@ def monitor(task_id):
         selected_log = 'out'
     else:
         selected_log = next(iter(task.logs.keys()))
-    return render_template('monitor.html', task=task, selected_log=selected_log)
+
+    viz_scripts, viz_divs = viz.test()
+
+    return render_template('monitor.html', task=task, selected_log=selected_log,
+                           viz_scripts=viz_scripts, viz_divs=viz_divs)
 
 
 @bp.route('/enum')
