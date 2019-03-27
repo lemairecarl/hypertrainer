@@ -49,13 +49,17 @@ $( document ).ready(function() {
     $('tr').click(function() {
         checkbox = $('.toggle-job', this);
         checkbox.prop('checked', !checkbox.prop('checked'));
+
+        // Handle new selection
+        $('.selected').removeClass('selected');
+        $(this).addClass('selected');
+        $('#button-monitor').attr('href', '/monitor/' + $(this).attr('data-id')).removeClass('disabled');
     });
     $('.toggle-job').click(function(event) {
         event.stopPropagation();
     });
     $('.button').click(function(event) {
         $(this).addClass('loading');
-        event.stopPropagation();
     });
     $('td.updating').append('<div class="ui active tiny inline loader"></div>');
 

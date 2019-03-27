@@ -15,6 +15,7 @@
   table td.Crashed,td.Lost { color: #9f3a38; background: #fff6f6; }
   table td.Cancelled { color: #573a08; background: #fffaf3; }
   table td.updating { color: #bbb }
+  table tr.selected { background-color: #dadaff }
   input.toggle-job { margin-right: 0.5em; }
   div.loader.inline { margin-left: 1em !important; }
 </style>
@@ -69,6 +70,7 @@
   <form action="/?action=bulk" method="post">
       <p>
         <a href="/" class="ui compact button basic">Refresh</a>
+        <a class="ui compact button disabled" id="button-monitor">Monitor</a>
         <input type="submit" name="action" value="Cancel" class="ui compact button">
         <input type="submit" name="action" value="Delete" class="ui compact button">
       </p>
@@ -87,7 +89,6 @@
           <th>Iteration</th>
           <th>Total TR</th>
           <th>Epoch TR</th>
-          <th>Actions</th>
         </tr></thead>
         {% if tasks %}
             {% for task in tasks %}
@@ -110,15 +111,11 @@
                 </td>
                 <td data-col="total_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
                 <td data-col="ep_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
-                <td>
-                  <a href="/monitor/{{ task.id }}" class="ui compact button">Monitor</a>
-                </td>
               </tr>
             {% endfor %}
           {% else %}
             <tr>
                 <td>No tasks to show.</td>
-                <td></td>
                 <td></td>
                 <td></td>
                 <td></td>
