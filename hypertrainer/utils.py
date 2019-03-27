@@ -1,3 +1,4 @@
+import io
 from enum import Enum
 from functools import reduce
 
@@ -43,15 +44,9 @@ def make_info_tables(tables_dict):
 
 
 def yaml_to_str(obj, yaml_engine):
-    class StringStream:
-        out = ''
-
-        def write(self, s):
-            StringStream.out += s.decode('utf-8')
-
-    stream = StringStream()
-    yaml_engine.dump(obj, stream)
-    return StringStream.out
+    with io.StringIO() as stream:
+        yaml_engine.dump(obj, stream)
+        return stream.getvalue()
 
 
 class TaskStatus(Enum):
