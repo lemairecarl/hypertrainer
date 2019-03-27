@@ -33,17 +33,8 @@ class Task(BaseModel):
     iter_per_epoch = IntegerField(default=0)
     epoch_duration = FloatField(default=0)
 
-    def __init__(self, script_file: str, config, **kwargs):
+    def __init__(self, config, **kwargs):
         super().__init__(**kwargs)
-
-        self.script_file = script_file
-        self.job_id = kwargs['job_id']  # Platform specific ID
-        self.platform_type = kwargs['platform_type']
-        self.status = kwargs['status']
-        self.cur_epoch = kwargs['cur_epoch']
-        self.cur_iter = kwargs['cur_iter']
-        self.iter_per_epoch = kwargs['iter_per_epoch']
-        self.epoch_duration = kwargs['epoch_duration']
 
         if type(config) is str:
             config_file_path = self.resolve_path(config)
@@ -58,6 +49,7 @@ class Task(BaseModel):
 
     @property
     def platform(self):
+        self.platform_type: ComputePlatformType  # because PyCharm is confused
         return get_platform(self.platform_type)
 
     @property

@@ -37,7 +37,7 @@ class ExperimentManager:
 
     @staticmethod
     def submit(platform: str, script_file: str, config_file: str):
-        t = Task(script_file, config_file, platform_type=ComputePlatformType(platform))
+        t = Task(script_file=script_file, config=config_file, platform_type=ComputePlatformType(platform))
         t.submit()
 
     @staticmethod
