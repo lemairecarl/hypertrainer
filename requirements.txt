@@ -1,8 +1,6 @@
-bokeh
+numpy
+bokeh>=1.0.4
 flask>=1.0.0
 ruamel.yaml
 peewee
 pandas
-visdom
-dataclasses
-peewee
