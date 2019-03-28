@@ -3,6 +3,7 @@ from pathlib import Path
 from time import time
 
 import numpy as np
+import pandas as pd
 from ruamel.yaml import YAML
 from peewee import CharField, IntegerField, FloatField
 
@@ -117,15 +118,24 @@ class Task(BaseModel):
                     self.iter_per_epoch = int(iter_per_epoch)
                     self.save()
 
-            elif name.startswith('metric_classwise_'):
-                pass  # TODO
-
             elif name.startswith('metric_'):
-                # Columns: epoch_idx, value
                 data = parse_columns(log)
                 if data:
                     m_name = name.partition('_')[2]  # Example: 'd_j_trump'.partition('_') -> ('d', '_', 'j_trump')
-                    self.metrics[m_name] = np.array(data, dtype=np.float)
+                    if name.startswith('metric_classwise_'):
+                        m_name = m_name.partition('_')[2]
+                        data_arrays = {}
+                        # Columns: epoch_idx, class_idx, value
+                        df = pd.DataFrame(data, columns=['epoch_idx', 'class_idx', 'value'], dtype=float)
+                        for class_idx, sub_df in df.groupby('class_idx'):
+                            del sub_df['class_idx']
+                            label = class_idx if type(class_idx) is str else str(int(class_idx))
+                            data_arrays[label] = sub_df.values  # convert to numpy
+                        self.metrics[m_name] = data_arrays
+                    else:
+                        # Columns: epoch_idx, value
+                        data_array = np.array(data, dtype=np.float)
+                        self.metrics[m_name] = data_array
 
     def dump_config(self):
         return yaml_to_str(self.config, yaml)
