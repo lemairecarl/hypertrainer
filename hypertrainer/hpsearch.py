@@ -3,13 +3,12 @@ from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
-from ruamel_yaml import YAML
+from ruamel.yaml import YAML
 
 from hypertrainer.utils import set_item_at_path
 
 ap = argparse.ArgumentParser()
 ap.add_argument('input_file', type=str, help='Path to yaml file')
-ap.add_argument('-s', '--hp-search', action='store_true')
 args = ap.parse_args()
 
 
@@ -53,5 +52,4 @@ def generate_hpsearch():
 
 
 if __name__ == '__main__':
-    if args.hp_search:
-        generate_hpsearch()
+    generate_hpsearch()

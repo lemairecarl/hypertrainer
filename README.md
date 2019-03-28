@@ -22,7 +22,7 @@ First, fill out the `hpsearch` section in your configuration file. See `sample/s
 Then, run:
 
 ```
-python em.py --hp-search path/to/your/configuration.yaml
+python hpsearch.py --hp-search path/to/your/configuration.yaml
 ```
 
 The child configs will be generated alongside their parent.
