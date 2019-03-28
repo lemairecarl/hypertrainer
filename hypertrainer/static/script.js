@@ -34,6 +34,31 @@ function updatePlatform(platform) {
         });
 }
 
+function filterTable() {
+    filter = $("#search-box input").val().toUpperCase();
+    // Loop through all table rows, and hide those who don't match the search query
+    num_results = 0;
+    $("table#tasks tr.task-row").each(function() {
+        show = false;
+        $("td", this).each(function() {
+            if ($(this).text().toUpperCase().indexOf(filter) > -1) {
+                show = true;
+            }
+        });
+        if (show) {
+            $(this).show();
+            num_results += 1;
+        } else {
+            $(this).hide();
+        }
+    });
+    if (num_results == 0) {
+        $("#search-box").addClass('error');
+    } else {
+        $("#search-box").removeClass('error');
+    }
+}
+
 $( document ).ready(function() {
     $('table').tablesort()
     $('thead th.number').data(
@@ -63,6 +88,7 @@ $( document ).ready(function() {
         $(this).addClass('loading');
     });
     $('td.updating').append('<div class="ui active tiny inline loader"></div>');
+    $("#search-box input").keyup(filterTable);
 
     // Update table
     $.ajax({

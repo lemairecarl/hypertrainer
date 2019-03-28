@@ -18,7 +18,7 @@
   table#tasks td.Crashed,td.Lost { color: #9f3a38; background: #fff6f6; }
   table#tasks td.Cancelled { color: #573a08; background: #fffaf3; }
   table#tasks td.updating { color: #bbb }
-  table#tasks tr.selectable:hover { background-color: #ececec }
+  table#tasks tr.task-row:hover { background-color: #ececec }
   table#tasks tr.selected { background-color: #dadaff !important }
   input.toggle-job { margin-right: 0.5em; }
   div.loader.inline { margin-left: 1em !important; }
@@ -77,7 +77,7 @@
         <button type="submit" class="ui compact button" name="action" value="Continue">Continue</button>
         <button type="submit" class="ui compact button" name="action" value="Cancel">Cancel</button>
         <button type="submit" class="ui compact button" name="action" value="Delete">Delete</button>
-        <span class="ui icon mini input">
+        <span class="ui icon mini input" id="search-box">
           <input type="text" placeholder="Search...">
           <i class="search icon"></i>
         </span>
@@ -100,7 +100,7 @@
         </tr></thead>
         {% if tasks %}
             {% for task in tasks %}
-              <tr data-id="{{ task.id }}" class="selectable">
+              <tr data-id="{{ task.id }}" class="task-row">
                 <td>
                   <input type="checkbox" class="toggle-job" name="check-{{ task.id }}">
                   {{ task.id }}
