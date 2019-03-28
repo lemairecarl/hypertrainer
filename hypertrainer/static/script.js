@@ -1,8 +1,8 @@
 function updatePlatform(platform) {
     $.ajax({
         url: "/update/" + platform,
-        cache: false,
-        timeout: 25000
+        cache: false
+        //timeout: 25000
     })
         .done(function( data ) {
             if( Object.keys(data).length == 0 ) return;

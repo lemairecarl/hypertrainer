@@ -4,14 +4,11 @@ from time import time
 
 import numpy as np
 import pandas as pd
-from ruamel.yaml import YAML
 from peewee import CharField, IntegerField, FloatField
 
 from hypertrainer.computeplatform import ComputePlatformType, get_platform
 from hypertrainer.db import BaseModel, EnumField, YamlField
 from hypertrainer.utils import TaskStatus, set_item_at_path, get_item_at_path, yaml_to_str, parse_columns
-
-yaml = YAML()
 
 
 # Setup scripts dir
@@ -36,17 +33,8 @@ class Task(BaseModel):
     iter_per_epoch = IntegerField(default=0)
     epoch_duration = FloatField(default=0)
 
-    def __init__(self, config, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-        if type(config) is str:
-            config_file_path = self.resolve_path(config)
-            self.config = yaml.load(config_file_path)
-            self.name = config_file_path.stem
-            self.save()  # insert in database
-        else:
-            self.config = config
-            self.name = kwargs['name']
 
         self.logs = {}
         self.metrics = {}
@@ -138,7 +126,7 @@ class Task(BaseModel):
                         self.metrics[m_name] = data_array
 
     def dump_config(self):
-        return yaml_to_str(self.config, yaml)
+        return yaml_to_str(self.config)
 
     @staticmethod
     def resolve_path(path: str) -> Path:

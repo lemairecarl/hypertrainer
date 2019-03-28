@@ -29,7 +29,7 @@ def make_child_config(yaml_data):
     return child
 
 
-def generate(parent_yaml):
+def generate(parent_yaml, parent_name):
     """Generate child YAML configs as a dict {name: yaml_object}"""
 
     # TODO documentation
@@ -48,7 +48,7 @@ def generate(parent_yaml):
         for p in hpsearch_config['params']:
             value = generate_random_value(p)
             set_item_at_path(child_yaml, p['param'], value)
-        name = parent_file_path.stem + '_{}_{}'.format(description, trial_idx)
+        name = parent_name + '_{}_{}'.format(description, trial_idx)
         child_configs[name] = child_yaml
 
     return child_configs
@@ -63,5 +63,5 @@ def write_to_file(child_configs, parent_file_path):
 if __name__ == '__main__':
     parent_file_path = Path(args.input_file)
     parent_yaml = yaml.load(parent_file_path)
-    child_configs = generate(parent_yaml)
+    child_configs = generate(parent_yaml, parent_file_path.stem)
     write_to_file(child_configs, parent_file_path)

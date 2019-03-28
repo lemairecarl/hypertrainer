@@ -2,6 +2,10 @@ import io
 from enum import Enum
 from functools import reduce
 
+from ruamel.yaml import YAML
+
+yaml = YAML()
+
 
 def get_item_at_path(obj, path, sep='.', default=KeyError):
     """Use this method like this: `get_item_with_path(obj, 'a.b.c')` to get the item `obj['a']['b']['c']`."""
@@ -30,9 +34,9 @@ def parse_columns(data):
     return [l.split() for l in data_lines]
 
 
-def yaml_to_str(obj, yaml_engine):
+def yaml_to_str(obj):
     with io.StringIO() as stream:
-        yaml_engine.dump(obj, stream)
+        yaml.dump(obj, stream)
         return stream.getvalue()
 
 

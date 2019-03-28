@@ -1,8 +1,13 @@
 from typing import Union
 
+from ruamel.yaml import YAML
+
 from hypertrainer.computeplatform import ComputePlatformType, get_platform
 from hypertrainer.task import Task
 from hypertrainer.db import get_db
+from hypertrainer.hpsearch import generate as generate_hpsearch
+
+yaml = YAML()
 
 
 class ExperimentManager:
@@ -37,8 +42,25 @@ class ExperimentManager:
 
     @staticmethod
     def submit(platform: str, script_file: str, config_file: str):
-        t = Task(script_file=script_file, config=config_file, platform_type=ComputePlatformType(platform))
-        t.submit()
+        # Load yaml config
+        config_file_path = Task.resolve_path(config_file)
+        yaml_config = yaml.load(config_file_path)
+        name = config_file_path.stem
+        # Handle hpsearch
+        if 'hpsearch' in yaml_config:
+            configs = generate_hpsearch(yaml_config, name)
+        else:
+            configs = {name: yaml_config}
+        # Make tasks
+        tasks = []
+        for name, config in configs.items():
+            t = Task(script_file=script_file, config=config, name=name, platform_type=ComputePlatformType(platform))
+            t.save()  # insert in database
+            tasks.append(t)
+        # Submit tasks
+        for t in tasks:
+            get_db().close()  # avoid deadlock
+            t.submit()  # FIXME submit all at once!
 
     @staticmethod
     def cancel_from_id(task_id):
@@ -51,6 +73,7 @@ class ExperimentManager:
             tasks = Task.select().where(Task.id.in_(task_id))
             for t in tasks:
                 if t.status.is_active():
+                    get_db().close()  # avoid deadlock
                     t.cancel()  # TODO one bulk ssh command
 
     @staticmethod
