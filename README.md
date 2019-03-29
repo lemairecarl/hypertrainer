@@ -7,6 +7,8 @@ HyperTrainer is a machine learning experiment manager and dashboard. Features:
 * Record all your traninig results in one place; export as csv
 * Launch and monitor training runs on different platforms in an uniform manner (Local, HPC, AWS, ...)
 
+![Screenshot](https://raw.githubusercontent.com/lemairecarl/hypertrainer/master/hypertrainer.png)
+
 HyperTrainer is compatible with Python scripts that accept a single YAML as input, instead of command-line args. In terms of reproducibility, a YAML file is much better than a set of command-line args.
 
 Trello board:
