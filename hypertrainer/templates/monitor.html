@@ -10,6 +10,11 @@
     {
         display: inline-block;
     }
+    h2#task .task-name
+    {
+        font-family: monospace;
+        padding-left: 1em;
+    }
 </style>
 
 <script type="text/javascript">
@@ -18,7 +23,7 @@
   });
 </script>
 
-<h2>Selected task: "{{task.name}}"</h2>
+<h2 id="task">Task:<span class="task-name">{{task.name}}</span></h2>
 
 <div class="ui top attached tabular menu">
     {% if viz_scripts %}<a class="item active" data-tab="visualize">Visualize</a>{% endif %}

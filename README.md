@@ -55,8 +55,6 @@ When you refresh the dashboard, a number of columns will update to inform you of
 
 _See section "Log Formats" to know how to give HyperTrainer the info it needs._
 
-[TODO: Tabs for `iterations.log` and `metric_*.log` should be hidden.]
-
 ### 4. Visualize a task
 
 Submit the script `dummy.py` with the config `plot_test.yaml`. Then, select the task and click on "Monitor". A dummy loss curve will appear in an interactive plot.
