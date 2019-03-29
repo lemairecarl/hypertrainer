@@ -25,6 +25,7 @@
     {% for k in task.logs.keys() %}
         <a class="item {{ 'active' if not viz_scripts and k == 'out' else ''}}" data-tab="{{k}}">{{k}}</a>
     {% endfor %}
+    <a class="item" data-tab="yaml">YAML</a>
 </div>
 {% if viz_scripts %}
     <div class="ui bottom attached tab segment active" data-tab="visualize">
@@ -39,3 +40,6 @@
         <pre>{{v}}</pre>
     </div>
 {% endfor %}
+<div class="ui bottom attached tab segment " data-tab="yaml">
+    <pre>{{ task.dump_config() }}</pre>
+</div>
