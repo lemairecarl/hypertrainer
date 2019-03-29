@@ -113,7 +113,7 @@ class HeliosPlatform(ComputePlatform):
         'Complete': TaskStatus.Finished
     }
 
-    def __init__(self, server_user='lemc2220@helios.calculquebec.ca'):
+    def __init__(self, server_user):
         self.server_user = server_user
         self.submission_template = Path('platform/helios/moab_template.sh').read_text()
         self.setup_template = Path('platform/helios/moab_setup.sh').read_text()
@@ -215,12 +215,12 @@ class HeliosPlatform(ComputePlatform):
 
 class ComputePlatformType(Enum):
     LOCAL = 'local'
-    HELIOS = 'helios'
+    # HELIOS = 'helios'
 
 
 platform_instances = {
     ComputePlatformType.LOCAL: LocalPlatform(),
-    ComputePlatformType.HELIOS: HeliosPlatform()
+    # ComputePlatformType.HELIOS: HeliosPlatform()
 }
 
 
