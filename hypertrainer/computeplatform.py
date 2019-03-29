@@ -115,8 +115,8 @@ class HeliosPlatform(ComputePlatform):
 
     def __init__(self, server_user='lemc2220@helios.calculquebec.ca'):
         self.server_user = server_user
-        self.submission_template = Path('sample/moab_template.sh').read_text()
-        self.setup_template = Path('sample/moab_setup.sh').read_text()
+        self.submission_template = Path('platform/helios/moab_template.sh').read_text()
+        self.setup_template = Path('platform/helios/moab_setup.sh').read_text()
 
     def submit(self, task):
         job_remote_dir = self._make_job_path(task)

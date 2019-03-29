@@ -6,7 +6,7 @@ training:
   num_epochs: 10
   learning_rate: 1e-3
 
-hpsearch:
+hpsearch:  # Used by HyperTrainer
   n_trials: 3
   type: random_uniform
   params:
