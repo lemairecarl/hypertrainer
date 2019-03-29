@@ -51,9 +51,9 @@ $( document ).ready(function() {
         // checkbox.prop('checked', !checkbox.prop('checked'));
 
         // Handle new selection
+        $('#monitoring').load('/monitor/' + $(this).attr('data-id'));
         $('.selected').removeClass('selected');
         $(this).addClass('selected');
-        $('#button-monitor').attr('href', '/monitor/' + $(this).attr('data-id')).removeClass('disabled');
     });
     $('.toggle-job').click(function(event) {
         event.stopPropagation();

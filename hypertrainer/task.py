@@ -125,6 +125,10 @@ class Task(BaseModel):
                         data_array = np.array(data, dtype=np.float)
                         self.metrics[m_name] = data_array
 
+        # Remove logs that have been interpreted
+        for k in ['epochs', 'iterations'] + [k for k in self.logs.keys() if k.startswith('metric_')]:
+            del self.logs[k]
+
     def dump_config(self):
         return yaml_to_str(self.config)
 

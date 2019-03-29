@@ -4,19 +4,22 @@
 <script type="text/javascript" src="static/jquery-3.3.1.min.js"></script>
 <script type="text/javascript" src="static/tablesort.js"></script>
 <script type="text/javascript" src="static/semantic-ui/semantic.min.js"></script>
+<script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.js"></script>
 <script type="text/javascript" src="static/script.js"></script>
 
+<link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.css" type="text/css" />
 <link rel="stylesheet" type="text/css" href="static/semantic-ui/semantic.min.css">
 
 <style type="text/css">
   div#footer { min-height: 10em; margin-top: 2em; }
-  table td.Running { color: #276f86; background: #f8ffff; }
-  table td.Finished { color: #2c662d; background: #fcfff5; }
-  table td.Crashed,td.Lost { color: #9f3a38; background: #fff6f6; }
-  table td.Cancelled { color: #573a08; background: #fffaf3; }
-  table td.updating { color: #bbb }
-  table tr.selectable:hover { background-color: #ececec }
-  table tr.selected { background-color: #dadaff !important }
+  table#tasks { margin-bottom: 1em; }
+  table#tasks td.Running { color: #276f86; background: #f8ffff; }
+  table#tasks td.Finished { color: #2c662d; background: #fcfff5; }
+  table#tasks td.Crashed,td.Lost { color: #9f3a38; background: #fff6f6; }
+  table#tasks td.Cancelled { color: #573a08; background: #fffaf3; }
+  table#tasks td.updating { color: #bbb }
+  table#tasks tr.selectable:hover { background-color: #ececec }
+  table#tasks tr.selected { background-color: #dadaff !important }
   input.toggle-job { margin-right: 0.5em; }
   div.loader.inline { margin-left: 1em !important; }
 </style>
@@ -71,8 +74,6 @@
   <form action="/?action=bulk" method="post">
       <p>
         <a href="/" class="ui compact button basic">Refresh</a>
-        <a class="ui compact button disabled" id="button-monitor">Monitor</a>
-        <a class="ui compact button disabled">Resubmit</a>
         <input type="submit" name="action" value="Cancel" class="ui compact button">
         <input type="submit" name="action" value="Delete" class="ui compact button">
         <span class="ui icon mini input">
@@ -134,7 +135,6 @@
   </form>
 </div>
 
-<div class="ui inverted basic segment" id="footer">
-  <div class="ui container">
-  </div>
+<div class="ui container" id="monitoring">
+  <h2>Selected task: (None selected)</h2>
 </div>
