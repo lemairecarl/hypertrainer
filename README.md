@@ -5,7 +5,7 @@ HyperTrainer is a machine learning experiment manager and dashboard. Features:
 * Run hyperparameter searches (you don't have to change your code)
 * Visualize your metrics with interactive plots; see your logs
 * Record all your traninig results in one place; export as csv
-* Launch and monitor training runs on different platforms in an uniform manner (Local, HPC, AWS, ...)
+* Launch and monitor training runs on different computing platforms in an uniform manner (Local, HPC, AWS, ...)
 
 ![Screenshot](https://raw.githubusercontent.com/lemairecarl/hypertrainer/master/hypertrainer.png)
 
@@ -28,7 +28,7 @@ git submodule update --init --recursive
 
 ## Tutorial
 
-In this tutorial we will start a dummy training task. To launch a task, HyperTrainer needs 2 things: a Python script, and a YAML config to feed to it.
+In this tutorial we will start dummy training tasks. To launch a task, HyperTrainer needs 2 things: a Python script, and a YAML config to feed to it.
 
 ### 1. Setup directories
 
@@ -51,7 +51,7 @@ First, fire up the dashboard (see section above). Using the web UI, submit the s
 
 ### 3. Monitor a task
 
-When you refresh the dashboard, a number of columns will update to inform you of the status and progress of your tasks. To see the stdout and stderr, select the task, then click on "Monitor". The monitoring page contains one tab for each `.log` or `.txt` file in the output path of the script.
+When you refresh the dashboard, a number of columns will update to inform you of the status and progress of your tasks. To see the stdout and stderr, click on a task. The monitoring panel will appear; it contains one tab for each `.log` or `.txt` file in the output path of the script.
 
 _See section "Log Formats" to know how to give HyperTrainer the info it needs._
 

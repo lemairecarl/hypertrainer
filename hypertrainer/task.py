@@ -126,7 +126,7 @@ class Task(BaseModel):
                         self.metrics[m_name] = data_array
 
         # Remove logs that have been interpreted
-        for k in ['epochs', 'iterations'] + [k for k in self.logs.keys() if k.startswith('metric_')]:
+        for k in [k for k in self.logs.keys() if k.startswith('metric_') or k in {'epochs', 'iterations'}]:
             del self.logs[k]
 
     def dump_config(self):
