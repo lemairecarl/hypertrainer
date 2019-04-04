@@ -12,8 +12,10 @@ yaml = YAML()
 
 class ExperimentManager:
     @staticmethod
-    def get_all_tasks():
-        # NOTE: statuses are not updated here; they are requested asynchronously by the dashboard
+    def get_all_tasks(do_update=False):
+        if do_update:
+            ExperimentManager.update_statuses()
+        # NOTE: statuses are requested asynchronously by the dashboard
         all_tasks = list(Task.select())
         return all_tasks
 
@@ -59,7 +61,7 @@ class ExperimentManager:
             tasks.append(t)
         # Submit tasks
         for t in tasks:
-            get_db().close()  # avoid deadlock
+            # get_db().close()  # avoid deadlock
             t.submit()  # FIXME submit all at once!
 
     @staticmethod

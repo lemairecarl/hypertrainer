@@ -1,0 +1,23 @@
+training:
+  output_path: dummy
+  dummy_param_exp10: 0
+  dummy_param_exp2: 0
+  dummy_param_lin: 0
+
+hpsearch:
+  n_trials: 3
+  type: random_uniform
+  params:
+    -
+      param: training.dummy_param_exp10
+      exponent_base: 10
+      lo: -2
+      hi: 2
+    - param: training.dummy_param_exp2
+      exponent_base: 2
+      lo: -2
+      hi: 2
+    -
+      param: training.dummy_param_lin
+      lo: -2
+      hi: 2
