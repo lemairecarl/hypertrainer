@@ -15,7 +15,7 @@ class ComputePlatform(ABC):
     def submit(self, task) -> str:
         """Submit a task and return the plaform specific task id."""
         pass
-    
+
     @abstractmethod
     def monitor(self, task, keys=None):
         """Return a dict of logs.
@@ -40,16 +40,21 @@ class ComputePlatform(ABC):
 
 
 class LocalPlatform(ComputePlatform):
+    root_dir: Path = None
+
     def __init__(self):
         # Setup root output dir
-        self.root_dir = os.environ.get('HYPERTRAINER_OUTPUT')
-        if self.root_dir is None:
-            self.root_dir = Path.home() / 'hypertrainer' / 'output'
-            print('Using root output dir: {}\nYou can configure this with $HYPERTRAINER_OUTPUT.'.format(self.root_dir))
-        self.root_dir.mkdir(parents=True, exist_ok=True)
+        p = os.environ.get('HYPERTRAINER_OUTPUT')
+        if p is None:
+            LocalPlatform.root_dir = Path.home() / 'hypertrainer' / 'output'
+            print('Using root output dir: {}\nYou can configure this with $HYPERTRAINER_OUTPUT.'
+                  .format(LocalPlatform.root_dir))
+        else:
+            LocalPlatform.root_dir = Path(p)
+        LocalPlatform.root_dir.mkdir(parents=True, exist_ok=True)
 
         self.processes = {}
-    
+
     def submit(self, task):
         # Setup task dir
         job_path = self._make_job_path(task)
@@ -62,12 +67,11 @@ class LocalPlatform(ComputePlatform):
         p = subprocess.Popen(['python', str(script_file_local), str(config_file)],
                              stdout=task.stdout_path.open(mode='w'),
                              stderr=task.stderr_path.open(mode='w'),
-                             cwd=os.path.dirname(os.path.realpath(__file__)),  # TODO working dir?
                              universal_newlines=True)
         job_id = str(p.pid)
         self.processes[job_id] = p
         return job_id
-    
+
     def monitor(self, task, keys=None):
         job_path = self._make_job_path(task)
         logs = {}
@@ -125,7 +129,8 @@ class HeliosPlatform(ComputePlatform):
 
         try:
             completed_process = subprocess.run(['ssh', self.server_user],
-                                               input=setup_script.encode(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                                               input=setup_script.encode(), stdout=subprocess.PIPE,
+                                               stderr=subprocess.PIPE)
             completed_process.check_returncode()
         except subprocess.CalledProcessError:
             print(completed_process.stderr)

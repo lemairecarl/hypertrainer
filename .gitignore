@@ -3,3 +3,4 @@ data/
 */__pycache__
 instance/
 test-remove-this/
+*.egg-info/

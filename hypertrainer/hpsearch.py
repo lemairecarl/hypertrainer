@@ -9,10 +9,6 @@ from hypertrainer.utils import set_item_at_path
 
 yaml = YAML()
 
-ap = argparse.ArgumentParser()
-ap.add_argument('input_file', type=str, help='Path to yaml file')
-args = ap.parse_args()
-
 
 def generate_random_value(p):
     # TODO documentation
@@ -61,6 +57,10 @@ def write_to_file(child_configs, parent_file_path):
 
 
 if __name__ == '__main__':
+    ap = argparse.ArgumentParser()
+    ap.add_argument('input_file', type=str, help='Path to yaml file')
+    args = ap.parse_args()
+
     parent_file_path = Path(args.input_file)
     parent_yaml = yaml.load(parent_file_path)
     child_configs = generate(parent_yaml, parent_file_path.stem)

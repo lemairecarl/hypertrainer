@@ -30,7 +30,7 @@ class ExperimentManager:
     @staticmethod
     def update_statuses(platforms: Union[str, list] = 'all'):
         if platforms == 'all':
-            platforms = [ComputePlatformType.LOCAL, ComputePlatformType.HELIOS]  # FIXME dynamic
+            platforms = [t for t in ComputePlatformType]
         for ptype in platforms:
             platform = get_platform(ptype)
             tasks = Task.select().where(Task.platform_type == ptype)
