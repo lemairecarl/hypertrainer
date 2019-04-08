@@ -67,6 +67,7 @@ class LocalPlatform(ComputePlatform):
         p = subprocess.Popen(['python', str(script_file_local), str(config_file)],
                              stdout=task.stdout_path.open(mode='w'),
                              stderr=task.stderr_path.open(mode='w'),
+                             cwd=task.output_path,
                              universal_newlines=True)
         job_id = str(p.pid)
         self.processes[job_id] = p

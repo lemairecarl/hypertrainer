@@ -37,6 +37,11 @@ def test_submit(client):
         deep_assert_equal(t.config, orig_yaml, exclude_keys=['output_path', 'is_child', 'dummy_param_exp10',
                                                              'dummy_param_exp2', 'dummy_param_lin'])
 
+        # Check output
+        t.monitor()
+        assert t.logs['err'].strip() == 'printing to stderr'
+        assert t.logs['out'].strip() == 'printing to stdout'
+
         # Check status
         assert t.status == TaskStatus.Finished, 'Status must be: Finished'
 
@@ -55,11 +60,6 @@ def test_submit(client):
         assert 10 ** -2 <= p_exp10 <= 10 ** 2, 'Hyperparameter values must be in range'
         assert 2 ** -2 <= p_exp2 <= 2 ** 2, 'Hyperparameter values must be in range'
         assert -2 <= p_lin <= 2, 'Hyperparameter values must be in range'
-
-        # Check output
-        t.monitor()
-        assert t.logs['out'].strip() == 'printing to stdout'
-        assert t.logs['err'].strip() == 'printing to stderr'
 
 
 def deep_assert_equal(a, b, exclude_keys):

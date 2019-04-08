@@ -138,6 +138,6 @@ class Task(BaseModel):
             resolved_path = SCRIPTS_DIR / path
             if not resolved_path.exists():
                 raise FileNotFoundError('Could not find {}'.format(path))
-            return resolved_path
+            return resolved_path.absolute()
         else:
-            return Path(path)
+            return Path(path).absolute()
