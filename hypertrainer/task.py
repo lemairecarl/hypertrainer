@@ -11,16 +11,6 @@ from hypertrainer.db import BaseModel, EnumField, YamlField
 from hypertrainer.utils import TaskStatus, set_item_at_path, get_item_at_path, yaml_to_str, parse_columns
 
 
-# Setup scripts dir
-SCRIPTS_DIR = os.environ.get('HYPERTRAINER_SCRIPTS')
-if SCRIPTS_DIR is None:
-    SCRIPTS_DIR = Path.home() / 'hypertrainer' / 'scripts'
-    print('Using root scripts dir: {}\nYou can configure this with $HYPERTRAINER_SCRIPTS.'.format(SCRIPTS_DIR))
-else:
-    SCRIPTS_DIR = Path(SCRIPTS_DIR)
-SCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
-
-
 class Task(BaseModel):
     script_file = CharField()  # Relative to the scripts folder, that exists on all platforms TODO document this
     config = YamlField()
@@ -139,13 +129,3 @@ class Task(BaseModel):
 
     def dump_config(self):
         return yaml_to_str(self.config)
-
-    @staticmethod
-    def resolve_path(path: str) -> Path:
-        if not Path(path).exists():
-            resolved_path = SCRIPTS_DIR / path
-            if not resolved_path.exists():
-                raise FileNotFoundError('Could not find {}'.format(path))
-            return resolved_path.absolute()
-        else:
-            return Path(path).absolute()

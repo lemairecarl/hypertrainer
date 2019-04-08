@@ -6,6 +6,7 @@ from hypertrainer.computeplatform import ComputePlatformType, get_platform, list
 from hypertrainer.task import Task
 from hypertrainer.db import get_db
 from hypertrainer.hpsearch import generate as generate_hpsearch
+from hypertrainer.utils import resolve_path
 
 yaml = YAML()
 
@@ -46,7 +47,7 @@ class ExperimentManager:
     @staticmethod
     def submit(platform: str, script_file: str, config_file: str):
         # Load yaml config
-        config_file_path = Task.resolve_path(config_file)
+        config_file_path = resolve_path(config_file)
         yaml_config = yaml.load(config_file_path)
         yaml_config = {} if yaml_config is None else yaml_config  # handle empty config file
         name = config_file_path.stem

@@ -7,7 +7,7 @@ from pathlib import Path
 from glob import glob
 import tempfile
 
-from hypertrainer.utils import TaskStatus, parse_columns
+from hypertrainer.utils import TaskStatus, parse_columns, resolve_path
 
 
 class ComputePlatform(ABC):
@@ -48,6 +48,12 @@ class LocalPlatform(ComputePlatform):
     root_dir: Path = None
 
     def __init__(self):
+        self.setup_output_path()
+
+        self.processes = {}
+
+    @staticmethod
+    def setup_output_path():
         # Setup root output dir
         p = os.environ.get('HYPERTRAINER_OUTPUT')
         if p is None:
@@ -58,8 +64,6 @@ class LocalPlatform(ComputePlatform):
             LocalPlatform.root_dir = Path(p)
         LocalPlatform.root_dir.mkdir(parents=True, exist_ok=True)
 
-        self.processes = {}
-
     def submit(self, task, continu=False):
         job_path = self._make_job_path(task)
         config_file = job_path / 'config.yaml'
@@ -69,7 +73,7 @@ class LocalPlatform(ComputePlatform):
             task.output_path = str(job_path)
             config_file.write_text(task.dump_config())
         # Launch process
-        script_file_local = task.resolve_path(task.script_file)
+        script_file_local = resolve_path(task.script_file)
         p = subprocess.Popen(['python', str(script_file_local), str(config_file)],
                              stdout=task.stdout_path.open(mode='w'),
                              stderr=task.stderr_path.open(mode='w'),
