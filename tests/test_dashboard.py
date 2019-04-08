@@ -1,19 +1,25 @@
-import os
-import tempfile
 from time import sleep
+from pathlib import Path
+
+from ruamel.yaml import YAML
 
 
 def test_empty_db(client):
-    """Start with a blank database."""
+    """Test blank database."""
 
     rv = client.get('/')
     assert b'No tasks to show' in rv.data
 
 
 def test_submit(client):
+    # Note: client has to be passed to this test to setup the flask app correctly
+
+    # Need to be in a flask app context before importing those:
     from hypertrainer.experimentmanager import experiment_manager
     from hypertrainer.task import Task
     from hypertrainer.utils import TaskStatus
+
+    yaml = YAML()
 
     # 1. Launch task
     experiment_manager.submit(script_file='test.py', config_file='test.yaml', platform='local')
@@ -25,8 +31,11 @@ def test_submit(client):
 
     # 3. Check stuff on each task
     p_exp10_values, p_exp2_values, p_lin_values = set(), set(), set()
+    orig_yaml = yaml.load(Path('test.yaml'))
     for t in tasks:  # type: Task
-        # TODO check that yaml matches original
+        # Check that yaml has been written correctly
+        deep_assert_equal(t.config, orig_yaml, exclude_keys=['output_path', 'is_child', 'dummy_param_exp10',
+                                                             'dummy_param_exp2', 'dummy_param_lin'])
 
         # Check status
         assert t.status == TaskStatus.Finished, 'Status must be: Finished'
@@ -53,20 +62,21 @@ def test_submit(client):
         assert t.logs['err'].strip() == 'printing to stderr'
 
 
-# def deep_equal(a, b, exclude_keys):
-#     if issubclass(a, dict) or isinstance(a, list):
-#         for k in a:
-#             if k in exclude_keys:
-#                 continue
-#             deep_equal(a[k], b[k], exclude_keys)
-#     else:
-#         if a != b:
-#             return False
-#     return True
-#
-#
-# yaml = YAML()
-#     input_yaml = yaml.load(Path(sys.argv[1]))
-#     orig_yaml = yaml.load(Path('test.yaml'))
-#     assert deep_equal(input_yaml, orig_yaml, exclude_keys=['output_path', 'is_child', 'dummy_param_exp10',
-#                                                            'dummy_param_exp2', 'dummy_param_lin'])
+def deep_assert_equal(a, b, exclude_keys):
+    """For asserting partial equality between yaml config objects"""
+
+    if isinstance(a, dict):
+        keys = set(a.keys()).union(set(b.keys()))
+        for k in keys:
+            if k in exclude_keys:
+                continue
+            else:
+                assert k in a
+                assert k in b
+            deep_assert_equal(a[k], b[k], exclude_keys)
+    elif isinstance(a, list):
+        assert len(a) == len(b)
+        for i in range(len(a)):
+            deep_assert_equal(a[i], b[i], exclude_keys)
+    else:
+        assert a == b
