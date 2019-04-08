@@ -51,6 +51,7 @@ $( document ).ready(function() {
         // checkbox.prop('checked', !checkbox.prop('checked'));
 
         // Handle new selection
+        $('#monitoring').html('<div class="ui active loader"></div>');
         $('#monitoring').load('/monitor/' + $(this).attr('data-id'));
         $('.selected').removeClass('selected');
         $(this).addClass('selected');

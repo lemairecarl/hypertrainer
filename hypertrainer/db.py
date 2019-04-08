@@ -6,12 +6,14 @@ from flask.cli import with_appcontext
 from hypertrainer.utils import yaml, yaml_to_str
 
 
-database = SqliteDatabase(current_app.config['DATABASE'])
+database = SqliteDatabase(None)
 
 
 def init_app(app):
     app.teardown_appcontext(close_db)
     app.cli.add_command(init_db_command)
+
+    database.init(current_app.config['DATABASE'])
 
     @app.before_request
     def before_request():

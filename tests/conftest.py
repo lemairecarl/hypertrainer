@@ -10,6 +10,7 @@ def client():
     db_fd, db_path = tempfile.mkstemp()
     output_dir = tempfile.TemporaryDirectory()
     os.environ['HYPERTRAINER_OUTPUT'] = output_dir.name
+    os.environ['HYPERTRAINER_SCRIPTS'] = os.path.join(os.getcwd(), 'scripts')
 
     app = create_app({
         'TESTING': True,
@@ -18,7 +19,8 @@ def client():
     client = app.test_client()
 
     with app.app_context():
-        from hypertrainer.db import init_db
+        from hypertrainer.db import init_db, init_app
+        init_app(app)
         init_db()
 
     yield client

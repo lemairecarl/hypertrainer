@@ -12,8 +12,13 @@ from hypertrainer.utils import TaskStatus, parse_columns
 
 class ComputePlatform(ABC):
     @abstractmethod
-    def submit(self, task) -> str:
-        """Submit a task and return the plaform specific task id."""
+    def submit(self, task, continu=False) -> str:
+        """Submit a task and return the plaform specific task id.
+
+        If continu=True, run script in already-existing output path.
+
+        Note: since 'continue' is a keyword in Python, I had to choose something else.
+        """
         pass
 
     @abstractmethod
@@ -55,13 +60,14 @@ class LocalPlatform(ComputePlatform):
 
         self.processes = {}
 
-    def submit(self, task):
-        # Setup task dir
+    def submit(self, task, continu=False):
         job_path = self._make_job_path(task)
-        job_path.mkdir(parents=True, exist_ok=False)
-        task.output_path = str(job_path)
         config_file = job_path / 'config.yaml'
-        config_file.write_text(task.dump_config())
+        if not continu:
+            # Setup task dir
+            job_path.mkdir(parents=True, exist_ok=False)
+            task.output_path = str(job_path)
+            config_file.write_text(task.dump_config())
         # Launch process
         script_file_local = task.resolve_path(task.script_file)
         p = subprocess.Popen(['python', str(script_file_local), str(config_file)],
@@ -118,16 +124,19 @@ class HeliosPlatform(ComputePlatform):
         'Complete': TaskStatus.Finished
     }
 
-    def __init__(self, server_user):
-        self.server_user = server_user
+    def __init__(self):
+        self.server_user = os.environ['HELIOS']
         self.submission_template = Path('platform/helios/moab_template.sh').read_text()
         self.setup_template = Path('platform/helios/moab_setup.sh').read_text()
 
-    def submit(self, task):
+    def submit(self, task, continu=False):
         job_remote_dir = self._make_job_path(task)
-        task.output_path = job_remote_dir
-        setup_script = self.replace_variables(self.setup_template, task, submission=self.submission_template)
-
+        if continu:
+            setup_script = self.replace_variables('cd $HYPERTRAINER_JOB_DIR && msub $HYPERTRAINER_NAME.sh', task)
+        else:
+            task.output_path = job_remote_dir
+            setup_script = self.replace_variables(self.setup_template, task, submission=self.submission_template)
+        completed_process = None
         try:
             completed_process = subprocess.run(['ssh', self.server_user],
                                                input=setup_script.encode(), stdout=subprocess.PIPE,
@@ -221,14 +230,29 @@ class HeliosPlatform(ComputePlatform):
 
 class ComputePlatformType(Enum):
     LOCAL = 'local'
-    # HELIOS = 'helios'
+    HELIOS = 'helios'
 
 
+# Instantiate ComputePlatform's if available
 platform_instances = {
-    ComputePlatformType.LOCAL: LocalPlatform(),
-    # ComputePlatformType.HELIOS: HeliosPlatform()
+    ComputePlatformType.LOCAL: LocalPlatform()
 }
+if 'HELIOS' in os.environ:
+    platform_instances[ComputePlatformType.HELIOS] = HeliosPlatform()
 
 
 def get_platform(p_type: ComputePlatformType):
     return platform_instances[p_type]
+
+
+def list_platforms(as_str=False):
+    """Lists available platforms.
+
+    Use this instead of list(ComputePlatformType), as it would contain all *implemented* platforms, including those
+    that are not available.
+    """
+
+    if as_str:
+        return [p.value for p in platform_instances.keys()]
+    else:
+        return list(platform_instances.keys())

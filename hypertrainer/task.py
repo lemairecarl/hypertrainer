@@ -64,11 +64,19 @@ class Task(BaseModel):
 
     @output_path.setter
     def output_path(self, path: str):
+        self.config: dict  # For helps pycharm inspection
+        if 'training' not in self.config:
+            self.config['training'] = {}  # FIXME generalize this (simply use output_path at config root?)
         set_item_at_path(self.config, 'training.output_path', path)
         self.save()
 
     def submit(self):
         self.job_id = self.platform.submit(self)
+        self.save()
+
+    def continu(self):
+        self.job_id = self.platform.submit(self, continu=True)
+        self.status = TaskStatus.Unknown
         self.save()
 
     def cancel(self):

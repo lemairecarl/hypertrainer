@@ -5,7 +5,7 @@ from flask import (
 )
 
 from hypertrainer import viz
-from hypertrainer.computeplatform import ComputePlatformType
+from hypertrainer.computeplatform import ComputePlatformType, list_platforms
 from hypertrainer.task import Task
 from hypertrainer.experimentmanager import experiment_manager as em
 from hypertrainer.utils import get_item_at_path
@@ -23,17 +23,20 @@ def index():
     elif action == 'bulk':
         # Bulk action on selected tasks
         task_ids = [k.split('-')[1] for k, v in request.form.items() if k.startswith('check-') and v]
-        if request.form['action'] == 'Cancel':
-            em.cancel_from_id(task_ids)
-            flash('Cancelled tasks {}.'.format(', '.join(task_ids)))
-        elif request.form['action'] == 'Delete':
-            em.delete_from_id(task_ids)
+        a = request.form['action']
+        if a == 'Cancel':
+            em.cancel_tasks(task_ids)
+            flash('Cancelled task(s) {}.'.format(', '.join(task_ids)))
+        elif a == 'Delete':
+            em.delete_tasks(task_ids)
+        elif a == 'Continue':
+            em.continue_tasks(task_ids)
+            flash('Resubmitted task(s) {}.'.format(', '.join(task_ids)))
     elif action is None:
         pass
     else:
         flash('ERROR: Unrecognized action!', 'error')
-    platforms = [p.value for p in ComputePlatformType]
-    return render_template('index.html', tasks=em.get_all_tasks(), platforms=platforms)
+    return render_template('index.html', tasks=em.get_all_tasks(), platforms=list_platforms(as_str=True))
 
 
 @bp.route('/monitor/<task_id>')
@@ -55,8 +58,7 @@ def monitor(task_id):
 
 @bp.route('/enum')
 def enum_platforms():
-    return jsonify([p.value for p in ComputePlatformType])
-    # return jsonify(['local'])
+    return jsonify(list_platforms(as_str=True))
 
 
 @bp.route('/update/<platform>')
@@ -87,6 +89,6 @@ def submit():
 
 def kill():
     task_id = request.args.get('task_id')
-    em.cancel_from_id(task_id)
+    em.cancel_tasks(task_id)
     flash('Cancelled task {}.'.format(task_id))
     return redirect(url_for('index'))

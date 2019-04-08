@@ -2,7 +2,7 @@ from typing import Union
 
 from ruamel.yaml import YAML
 
-from hypertrainer.computeplatform import ComputePlatformType, get_platform
+from hypertrainer.computeplatform import ComputePlatformType, get_platform, list_platforms
 from hypertrainer.task import Task
 from hypertrainer.db import get_db
 from hypertrainer.hpsearch import generate as generate_hpsearch
@@ -28,15 +28,16 @@ class ExperimentManager:
         return tasks
 
     @staticmethod
-    def update_statuses(platforms: Union[str, list] = 'all'):
-        if platforms == 'all':
-            platforms = [t for t in ComputePlatformType]
+    def update_statuses(platforms: list = None):
+        if platforms is None:
+            platforms = list_platforms()
         for ptype in platforms:
             platform = get_platform(ptype)
             tasks = Task.select().where(Task.platform_type == ptype)
             job_ids = [t.job_id for t in tasks]
             get_db().close()  # Close db since the following may take time
             statuses = platform.get_statuses(job_ids)
+            get_db().connect()
             for t in tasks:
                 if t.status.is_active():
                     t.status = statuses[t.job_id]
@@ -47,6 +48,7 @@ class ExperimentManager:
         # Load yaml config
         config_file_path = Task.resolve_path(config_file)
         yaml_config = yaml.load(config_file_path)
+        yaml_config = {} if yaml_config is None else yaml_config  # handle empty config file
         name = config_file_path.stem
         # Handle hpsearch
         if 'hpsearch' in yaml_config:
@@ -61,31 +63,25 @@ class ExperimentManager:
             tasks.append(t)
         # Submit tasks
         for t in tasks:
-            # get_db().close()  # avoid deadlock
             t.submit()  # FIXME submit all at once!
 
     @staticmethod
-    def cancel_from_id(task_id):
-        if type(task_id) is str:
-            t = Task.get(Task.id == task_id)
-            if t.status.is_active():
-                t.cancel()
-        else:
-            assert type(task_id) is list
-            tasks = Task.select().where(Task.id.in_(task_id))
-            for t in tasks:
-                if t.status.is_active():
-                    get_db().close()  # avoid deadlock
-                    t.cancel()  # TODO one bulk ssh command
+    def continue_tasks(task_ids: list):
+        tasks = Task.select().where(Task.id.in_(task_ids))
+        for t in tasks:
+            if not t.status.is_active():
+                t.continu()  # TODO one bulk ssh command
 
     @staticmethod
-    def delete_from_id(task_id):
-        if type(task_id) is str:
-            t = Task.get(Task.id == task_id)  # type: Task
-            t.delete_instance()
-        else:
-            assert type(task_id) is list
-            Task.delete().where(Task.id.in_(task_id)).execute()
+    def cancel_tasks(task_ids: list):
+        tasks = Task.select().where(Task.id.in_(task_ids))
+        for t in tasks:
+            if t.status.is_active():
+                t.cancel()  # TODO one bulk ssh command
+
+    @staticmethod
+    def delete_tasks(task_ids: list):
+        Task.delete().where(Task.id.in_(task_ids)).execute()
 
 
 experiment_manager = ExperimentManager()
