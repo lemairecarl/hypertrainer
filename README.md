@@ -5,69 +5,93 @@ HyperTrainer is a machine learning experiment manager and dashboard. Features:
 * Run hyperparameter searches (you don't have to change your code)
 * Visualize your metrics with interactive plots; see your logs
 * Record all your traninig results in one place; export as csv
-* Launch and monitor training runs on different computing platforms in an uniform manner (Local, HPC, AWS, ...)
+* Launch and monitor training runs on different computing platforms in an uniform
+  manner (Local, HPC, AWS, ...)
 
 ![Screenshot](https://raw.githubusercontent.com/lemairecarl/hypertrainer/master/hypertrainer.png)
 
-HyperTrainer is compatible with Python scripts that accept a single YAML as input, instead of command-line args. In terms of reproducibility, a YAML file is much better than a set of command-line args.
+HyperTrainer is compatible with Python scripts that accept a single YAML as input,
+instead of command-line args. In terms of reproducibility, a YAML file is much
+better than a set of command-line args.
 
 Trello board:
 https://trello.com/b/C1VCfrSW/rncan-experiment-manager
 
 ## Setup
 
-Since this project depends on https://github.com/Semantic-Org/Semantic-UI-CSS; you will need to run this command inside the repo:
+Since this project depends on https://github.com/Semantic-Org/Semantic-UI-CSS;
+you will need to run this command inside the repo:
 
-```
+```bash
 git submodule update --init --recursive
 ```
 
 ## Launching the dashboard
 
-`cd` to the root of this repo and run `start.sh` (make sure it has execute permission). Then, browse to http://localhost:5000.
+`cd` to the root of this repo and run `start.sh` (make sure it has execute
+permission). Then, browse to http://localhost:5000.
 
 ## Tutorial
 
-In this tutorial we will start dummy training tasks. To launch a task, HyperTrainer needs 2 things: a Python script, and a YAML config to feed to it.
+In this tutorial we will start dummy training tasks. To launch a task,
+HyperTrainer needs 2 things: a Python script, and a YAML config to feed to it.
 
 ### 1. Setup directories
 
-The **script directory** is where HyperTrainer looks for scripts and configs. You can put symlinks of your scripts there. For now, let's set it to the `hypertrainer/sample/` directory of this repo:
+`$HYPERTRAINER_PATH` is the **scripts PATH**, and works similarly to the
+`$PATH` environment variable on Linux. It should contain a colon-separated list
+of paths (e.g. `HYPERTRAINER_PATH=/path/a:/path/b`) where HyperTrainer will look
+for scripts and configs. For now, let's set it to the `hypertrainer/sample/`
+directory of this repo:
 
+```bash
+export HYPERTRAINER_PATH="<path to this repo>/hypertrainer/sample"
+# to persist the variable, add the previous line to your ~/.bashrc 
 ```
-# cd to this repo
-export HYPERTRAINER_SCRIPTS="./hypertrainer/sample"
-```
 
-[TODO: `$HYPERTRAINER_PATH` should exist and contain the list of directories to scan to find scripts and configs. It should not be necessary to move/link scripts to a single directory.]
-
-The **root output directory** is where all the outputs of locally running scripts should go. By default, it is set to `~/hypertrainer/output` (configure this using `$HYPERTRAINER_OUTPUT`). Inside this directory, HyperTrainer will create a subdirectory for each local task. This subdirectory should contain the stdout, stderr, metrics and all other outputs of your script.
-
-[TODO: the subfolder should be the working directory of the script]
+The **root output directory** is where all the outputs of locally running scripts
+should go. By default, it is set to `~/hypertrainer/output` (configure this using
+`$HYPERTRAINER_OUTPUT`). Inside this directory, HyperTrainer will create a
+subdirectory for each local task. This subdirectory should contain the stdout,
+stderr, metrics and all other outputs of your script.
 
 ### 2. Submit a task
 
-First, fire up the dashboard (see section above). Using the web UI, submit the script `dummy.py` with the config `epochs_test.yaml` (those files are now in `$HYPERTRAINER_SCRIPTS`). Be sure to select the "local" platform. After having clicked "Submit", you should see the task appear in the table.
+First, fire up the dashboard (see section above). Using the web UI, submit the
+script `dummy.py` with the config `epochs_test.yaml`. Be sure to select the
+"local" platform. After having clicked "Submit", you should see the task appear
+in the table.
 
 ### 3. Monitor a task
 
-When you refresh the dashboard, a number of columns will update to inform you of the status and progress of your tasks. To see the stdout and stderr, click on a task. The monitoring panel will appear; it contains one tab for each `.log` or `.txt` file in the output path of the script.
+When you refresh the dashboard, a number of columns will update to inform you
+of the status and progress of your tasks. To see the stdout and stderr, click
+on a task. The monitoring panel will appear; it contains one tab for each
+`.log` or `.txt` file in the output path of the script.
 
 _See section "Log Formats" to know how to give HyperTrainer the info it needs._
 
 ### 4. Visualize a task
 
-Submit the script `dummy.py` with the config `plot_test.yaml`. Then, select the task and click on "Monitor". A dummy loss curve will appear in an interactive plot.
+Submit the script `dummy.py` with the config `plot_test.yaml`. Then, select the
+task and click on "Monitor". A dummy loss curve will appear in an interactive
+plot.
 
-_See section "Log Formats" to know how to communicate your metrics to HyperTrainer._
+_See section "Log Formats" to know how to communicate your metrics to
+HyperTrainer._
 
 ### 5. Run an hyperparameter search
 
-Submit the script `dummy.py` with the config `hp_test.yaml`. You should see three tasks appear in the table. These tasks are all the same, except that they have a different value in their config YAML for `training.learning_rate`. The configuration of the hyperparameter search is inside `hp_test.yaml` -- have a look at it.
+Submit the script `dummy.py` with the config `hp_test.yaml`. You should see
+three tasks appear in the table. These tasks are all the same, except that they
+have a different value in their config YAML for `training.learning_rate`. The
+configuration of the hyperparameter search is inside `hp_test.yaml` -- have a
+look at it.
 
 ## Log Formats
 
-HyperTrainer will look for certain TSV (tab-separated values) files in the output path of your scripts:
+HyperTrainer will look for certain TSV (tab-separated values) files in the
+output path of your scripts:
 
 * `epochs.log`: Training progress at the epoch level. Expected columns:
     * epoch_index
