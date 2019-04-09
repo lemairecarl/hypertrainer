@@ -7,7 +7,7 @@ import pandas as pd
 from peewee import CharField, IntegerField, FloatField
 
 from hypertrainer.computeplatform import ComputePlatformType, get_platform
-from hypertrainer.db import BaseModel, EnumField, YamlField
+from hypertrainer.db import BaseModel, EnumField, YamlField, get_db
 from hypertrainer.utils import TaskStatus, set_item_at_path, get_item_at_path, yaml_to_str, parse_columns
 
 
@@ -75,33 +75,31 @@ class Task(BaseModel):
 
     def monitor(self):
         # Retrieve logs
+        get_db().close()
         self.logs = self.platform.monitor(self)
+        get_db().connect()
 
         # Interpret logs
         for name, log in self.logs.items():
-            if name == 'epochs':
-                # Columns: epoch_idx, unix_timestamp
-                data = parse_columns(log)
-                if data:  # if not empty
-                    array = np.array(data, dtype=np.float)
-                    self.cur_epoch = int(array[-1, 0])
-                    if len(array) > 1:
-                        durations = array[1:, 1] - array[:-1, 1]
-                        self.epoch_duration = np.mean(durations)  # TODO more weight to last epochs?
-                        elapsed = time() - array[-1, 1]
-                        self.ep_time_remain = max(self.epoch_duration - elapsed, 0)
-                        self.total_time_remain = self.ep_time_remain + self.epoch_duration * (
-                                get_item_at_path(self.config, 'training.num_epochs') - self.cur_epoch - 1)
-                    self.save()
-
-            elif name == 'iterations':
+            if name == 'progress':
                 # Columns = epoch_idx, iter_idx, iter_per_epoch, unix_timestamp
                 data = parse_columns(log)
                 if data:
-                    ep_idx, iter_idx, iter_per_epoch, timestamp = data[-1]
-                    # TODO update epoch here instead? (removing need for epochs.log)
-                    self.cur_iter = int(iter_idx)
-                    self.iter_per_epoch = int(iter_per_epoch)
+                    df = pd.DataFrame(data, columns=['ep_idx', 'iter_idx', 'iter_per_epoch', 'timestamp'])
+                    df = df.astype(float).astype(int)
+                    # Epochs
+                    self.cur_epoch = int(df.tail(1).ep_idx)
+                    epochs_times = df.groupby('ep_idx').min().timestamp.values
+                    if len(epochs_times) > 1:
+                        durations = epochs_times[1:] - epochs_times[:-1]
+                        self.epoch_duration = np.mean(durations)  # TODO more weight to last epochs?
+                        cur_ep_elapsed = time() - epochs_times[-1]
+                        self.ep_time_remain = max(self.epoch_duration - cur_ep_elapsed, 0)
+                        epochs_remaining = get_item_at_path(self.config, 'training.num_epochs') - self.cur_epoch - 1
+                        self.total_time_remain = self.ep_time_remain + self.epoch_duration * epochs_remaining
+                    # Iterations
+                    self.cur_iter = int(df.tail(1).iter_idx)
+                    self.iter_per_epoch = int(df.tail(1).iter_per_epoch)
                     self.save()
 
             elif name.startswith('metric_'):
@@ -124,7 +122,7 @@ class Task(BaseModel):
                         self.metrics[m_name] = data_array
 
         # Remove logs that have been interpreted
-        for k in [k for k in self.logs.keys() if k.startswith('metric_') or k in {'epochs', 'iterations'}]:
+        for k in [k for k in self.logs.keys() if k.startswith('metric_') or k in {'progress'}]:
             del self.logs[k]
 
     def dump_config(self):

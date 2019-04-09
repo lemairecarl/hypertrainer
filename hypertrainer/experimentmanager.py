@@ -23,7 +23,7 @@ class ExperimentManager:
     @staticmethod
     def get_tasks(platform: ComputePlatformType):
         ExperimentManager.update_statuses(platforms=[platform])  # TODO return tasks to avoid other db query?
-        tasks = Task.select().where(Task.platform_type == platform)
+        tasks = list(Task.select().where(Task.platform_type == platform))
         for t in tasks:
             t.monitor()
         return tasks
@@ -34,7 +34,7 @@ class ExperimentManager:
             platforms = list_platforms()
         for ptype in platforms:
             platform = get_platform(ptype)
-            tasks = Task.select().where(Task.platform_type == ptype)
+            tasks = list(Task.select().where(Task.platform_type == ptype))
             job_ids = [t.job_id for t in tasks]
             get_db().close()  # Close db since the following may take time
             statuses = platform.get_statuses(job_ids)
@@ -68,14 +68,14 @@ class ExperimentManager:
 
     @staticmethod
     def continue_tasks(task_ids: list):
-        tasks = Task.select().where(Task.id.in_(task_ids))
+        tasks = list(Task.select().where(Task.id.in_(task_ids)))
         for t in tasks:
             if not t.status.is_active():
                 t.continu()  # TODO one bulk ssh command
 
     @staticmethod
     def cancel_tasks(task_ids: list):
-        tasks = Task.select().where(Task.id.in_(task_ids))
+        tasks = list(Task.select().where(Task.id.in_(task_ids)))
         for t in tasks:
             if t.status.is_active():
                 t.cancel()  # TODO one bulk ssh command

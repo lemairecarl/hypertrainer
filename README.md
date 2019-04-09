@@ -90,13 +90,10 @@ look at it.
 
 ## Log Formats
 
-HyperTrainer will look for certain TSV (tab-separated values) files in the
-output path of your scripts:
+HyperTrainer will look for certain files in the
+output path of your scripts (which should contain tab-separated values):
 
-* `epochs.log`: Training progress at the epoch level. Expected columns:
-    * epoch_index
-    * unix_timestamp
-* `iterations.log`: Training progress at the iteration level. Expected columns:
+* `progress.log`: Training progress at the iteration level. Expected columns:
     * epoch_index
     * iteration_index
     * num_iter_per_epoch
@@ -108,8 +105,6 @@ output path of your scripts:
     * epoch_index
     * class_index_or_str
     * value
-
-[TODO: change extension from `.log` to `.tsv`; Remove `epochs.log`]
 
 ## Acknowledgements
 
