@@ -71,12 +71,12 @@
 
   <h2>Tasks</h2>
 
-  <form action="/?action=bulk" method="post">
+  <form action="/?action=bulk" method="post" id="bulk">
       <p>
         <a href="/" class="ui compact button basic">Refresh</a>
-        <button type="submit" class="ui compact button" name="action" value="Continue">Continue</button>
-        <button type="submit" class="ui compact button" name="action" value="Cancel">Cancel</button>
-        <button type="submit" class="ui compact button" name="action" value="Delete">Delete</button>
+        <button type="submit" class="ui compact button disabled" name="action" value="Continue">Continue</button>
+        <button type="submit" class="ui compact button disabled" name="action" value="Cancel">Cancel</button>
+        <button type="submit" class="ui compact button disabled" name="action" value="Delete">Delete</button>
         <span class="ui icon mini input" id="search-box">
           <input type="text" placeholder="Search...">
           <i class="search icon"></i>

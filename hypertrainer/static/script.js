@@ -82,13 +82,21 @@ $( document ).ready(function() {
         $(this).addClass('selected');
     });
     $('.toggle-job').click(function(event) {
+        if ($('.toggle-job:checked').length > 0) {
+            $('form#bulk button').removeClass('disabled');
+        } else {
+            $('form#bulk button').addClass('disabled');
+        }
         event.stopPropagation();
     });
     $('.button').click(function(event) {
         $(this).addClass('loading');
     });
     $('td.updating').append('<div class="ui active tiny inline loader"></div>');
-    $("#search-box input").keyup(filterTable);
+    $("#search-box input").keyup(function() {
+        filterTable();
+        $('.toggle-job').prop('checked', false);
+    });
 
     // Update table
     $.ajax({
