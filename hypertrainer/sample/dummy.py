@@ -30,7 +30,6 @@ die_after = config.get('die_after', -1)
 print('\nStarting iterations!')
 
 with iterations_log.open('a', buffering=1) as iter_log_file, loss_log.open('a', buffering=1) as loss_file:
-
     for ep_idx in range(n_epochs):
         for i in range(n_iter):
             iter_log_file.write('{}\t{}\t{}\t{}\n'.format(ep_idx, i, n_iter, time()))

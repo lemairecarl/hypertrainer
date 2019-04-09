@@ -85,6 +85,7 @@ class Task(BaseModel):
                 # Columns = epoch_idx, iter_idx, iter_per_epoch, unix_timestamp
                 data = parse_columns(log)
                 if data:
+                    data = data if data[0][0].isdigit() else data[1:]  # Handle presence/absence of header
                     df = pd.DataFrame(data, columns=['ep_idx', 'iter_idx', 'iter_per_epoch', 'timestamp'])
                     df = df.astype(float).astype(int)
                     # Epochs
@@ -105,6 +106,7 @@ class Task(BaseModel):
             elif name.startswith('metric_'):
                 data = parse_columns(log)
                 if data:
+                    data = data if int(data[0][0]) == 0 else data[1:]  # Handle presence/absence of header
                     m_name = name.partition('_')[2]  # Example: 'd_j_trump'.partition('_') -> ('d', '_', 'j_trump')
                     if name.startswith('metric_classwise_'):
                         m_name = m_name.partition('_')[2]
