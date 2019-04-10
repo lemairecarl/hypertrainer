@@ -7,7 +7,7 @@
 <script type="text/javascript" src="http://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.js"></script>
 <script type="text/javascript" src="static/script.js"></script>
 
-<link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.css" type="text/css" />
+<link rel="stylesheet" href="http://cdn.pydata.org/bokeh/release/bokeh-1.0.4.min.css" type="text/css"/>
 <link rel="stylesheet" type="text/css" href="static/semantic-ui/semantic.min.css">
 
 <style type="text/css">
@@ -25,6 +25,7 @@
   #header { margin-top: 0; }
   #header h1 { display: inline-block; }
   #project-selector { width: 100%; }
+
 </style>
 
 <!-- Dialog: Submit new task -->
@@ -54,17 +55,17 @@
         </div>
         <div class="field">
           <label for="project">Project</label>
-            <div class="ui search selection dropdown" id="project">
-              <input type="hidden" name="project">
-              <i class="dropdown icon"></i>
-              <span class="text"></span>
-              <div class="menu">
-                <div class="item" data-value="">None</div>
+          <div class="ui search selection dropdown" id="project">
+            <input type="hidden" name="project">
+            <i class="dropdown icon"></i>
+            <span class="text"></span>
+            <div class="menu">
+              <div class="item" data-value="">None</div>
                 {% for p in projects %}
                   <div class="item" data-value="{{ p }}">{{ p }}</div>
                 {% endfor %}
-              </div>
             </div>
+          </div>
         </div>
       </div>
     </form>
@@ -103,30 +104,31 @@
 </div>
 
 <div class="ui container">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        {% for category, message in messages %}
-          <div class="ui message {{category}}">{{ message }}</div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="ui message {{category}}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
   <form action="/?action=bulk" method="post" id="bulk">
-      <p>
-        <a href="/" class="ui compact button basic">Refresh</a>
-        <button type="button" class="ui compact button" id="new-task">New</button>
-        <button type="submit" class="ui compact button disabled" name="action" value="Continue">Continue</button>
-        <button type="submit" class="ui compact button disabled" name="action" value="Cancel">Cancel</button>
-        <button type="submit" class="ui compact button disabled" name="action" value="Delete">Delete</button>
-        <span class="ui icon mini input" id="search-box">
-          <input type="text" placeholder="Filter...">
-          <i class="search icon"></i>
-        </span>
-      </p>
+    <p>
+      <a href="/" class="ui compact button basic">Refresh</a>
+      <button type="button" class="ui compact button" id="new-task">New</button>
+      <button type="submit" class="ui compact button disabled" name="action" value="Continue">Continue</button>
+      <button type="submit" class="ui compact button disabled" name="action" value="Cancel">Cancel</button>
+      <button type="submit" class="ui compact button disabled" name="action" value="Delete">Delete</button>
+      <span class="ui icon mini input" id="search-box">
+        <input type="text" placeholder="Filter...">
+        <i class="search icon"></i>
+      </span>
+    </p>
 
-      <div id="table-container">
+    <div id="table-container">
       <table class="ui sortable celled compact table" id="tasks">
-        <thead><tr>
+        <thead>
+        <tr>
           <th class="number">
             <input type="checkbox" class="toggle-job" id="checkall">
             ID
@@ -139,43 +141,44 @@
           <th>Iteration</th>
           <th>Total TR</th>
           <th>Epoch TR</th>
-        </tr></thead>
-          {% if tasks %}
-            {% for task in tasks %}
-              <tr data-id="{{ task.id }}" class="task-row">
-                <td>
-                  <input type="checkbox" class="toggle-job" name="check-{{ task.id }}">
-                  {{ task.id }}
-                </td>
-                <td data-col="platform">{{ task.platform_type.value }}</td>
-                <td>{{ task.job_id }}</td>
-                <td>{{ task.name }}</td>
-                <td data-col="status" class="{{ 'updating' if task.status.is_active() else task.status.value }}">
-                  {{ task.status.value }}
-                </td>
-                <td data-col="epoch" class="{{ 'updating' if task.status.is_active() else '' }}">
-                  {{ task.cur_epoch + 1 }} / {{ task.config.training.num_epochs }}
-                </td>
-                <td data-col="iteration" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
-                <td data-col="total_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
-                <td data-col="ep_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
-              </tr>
-            {% endfor %}
-          {% else %}
-            <tr>
-                <td>No tasks to show.</td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
-                <td></td>
+        </tr>
+        </thead>
+        {% if tasks %}
+          {% for task in tasks %}
+            <tr data-id="{{ task.id }}" class="task-row">
+              <td>
+                <input type="checkbox" class="toggle-job" name="check-{{ task.id }}">
+                {{ task.id }}
+              </td>
+              <td data-col="platform">{{ task.platform_type.value }}</td>
+              <td>{{ task.job_id }}</td>
+              <td>{{ task.name }}</td>
+              <td data-col="status" class="{{ 'updating' if task.status.is_active() else task.status.value }}">
+                {{ task.status.value }}
+              </td>
+              <td data-col="epoch" class="{{ 'updating' if task.status.is_active() else '' }}">
+                {{ task.cur_epoch + 1 }} / {{ task.config.training.num_epochs }}
+              </td>
+              <td data-col="iteration" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
+              <td data-col="total_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
+              <td data-col="ep_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
             </tr>
-          {% endif %}
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td>No tasks to show.</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        {% endif %}
       </table>
-      </div>
+    </div>
   </form>
 </div>
 
