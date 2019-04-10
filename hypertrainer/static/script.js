@@ -73,6 +73,8 @@ $( document ).ready(function() {
             allowAdditions: true
         })
         .dropdown('set selected', $('#project-selector').attr('data-selected'));
+    $('#platform.dropdown')
+        .dropdown('set selected', 'local');
     $('button#new-task').click(function() {
         $('#submit-dialog').modal({
             onApprove : function() {
