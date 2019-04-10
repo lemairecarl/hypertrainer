@@ -1,7 +1,7 @@
 import datetime
 
 from flask import (
-    Blueprint, render_template, request, flash, redirect, url_for, jsonify
+    Blueprint, render_template, request, flash, redirect, url_for, jsonify, session
 )
 
 from hypertrainer import viz
@@ -32,11 +32,16 @@ def index():
         elif a == 'Continue':
             em.continue_tasks(task_ids)
             flash('Resubmitted task(s) {}.'.format(', '.join(task_ids)))
+    elif action == 'chooseproject':
+        session['project'] = request.args.get('p')
     elif action is None:
         pass
     else:
         flash('ERROR: Unrecognized action!', 'error')
-    return render_template('index.html', tasks=em.get_all_tasks(), platforms=list_platforms(as_str=True))
+    return render_template('index.html',
+                           tasks=em.get_all_tasks(proj=session.get('project')),
+                           platforms=list_platforms(as_str=True), projects=em.list_projects(),
+                           cur_proj=session.get('project'))
 
 
 @bp.route('/monitor/<task_id>')
@@ -69,7 +74,7 @@ def update(platform):
         else:
             return str(datetime.timedelta(seconds=int(seconds)))
 
-    tasks = em.get_tasks(ComputePlatformType(platform))
+    tasks = em.get_tasks(ComputePlatformType(platform), proj=session.get('project'))
     data = {}
     for t in tasks:
         data[t.id] = {
@@ -87,7 +92,8 @@ def submit():
     platform = request.form['platform']
     script_file = request.form['script']
     config_file = request.form['config']
-    em.submit(platform, script_file, config_file)
+    project = request.form['project']
+    em.submit(platform, script_file, config_file, project=project)
     flash('Submitted "{}" with "{}" on {}.'.format(script_file, config_file, platform), 'success')
     return redirect(url_for('index'))
 

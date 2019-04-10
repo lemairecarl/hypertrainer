@@ -12,7 +12,7 @@
 
 <style type="text/css">
   div#footer { min-height: 10em; margin-top: 2em; }
-  table#tasks { margin-bottom: 2em; }
+  #table-container { margin-bottom: 2em; max-height: 30em; overflow-x: hidden; overflow-y: auto }
   table#tasks td.Running { color: #276f86; background: #f8ffff; }
   table#tasks td.Finished { color: #2c662d; background: #fcfff5; }
   table#tasks td.Crashed,td.Lost { color: #9f3a38; background: #fff6f6; }
@@ -22,16 +22,87 @@
   table#tasks tr.selected { background-color: #dadaff !important }
   input.toggle-job { margin-right: 0.5em; }
   div.loader.inline { margin-left: 1em !important; }
+  #header { margin-top: 0; }
+  #header h1 { display: inline-block; }
+  #project-selector { width: 100%; }
 </style>
 
-<div class="ui inverted basic segment">
+<!-- Dialog: Submit new task -->
+<div class="ui modal" id="submit-dialog">
+  <div class="header">Submit new task</div>
+  <div class="content">
+    <form action="/?action=submit" method="post" class="ui form" id="form-new-task">
+      <div class="two fields">
+        <div class="field">
+          <label for="script">Script</label>
+          <input name="script" id="script" value="dummy.py">
+        </div>
+        <div class="field">
+          <label for="config">Config</label>
+          <input name="config" id="config" value="hp_test.yaml">
+        </div>
+      </div>
+      <div class="two fields">
+        <div class="field">
+          <label for="platform">Platform</label>
+          <select class="ui dropdown" name="platform" id="platform">
+            <option value="">Platform</option>
+            {% for p in platforms %}
+              <option value="{{ p }}" {{ 'selected="selected"' if p == 'local' else '' }}>{{ p }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="project">Project</label>
+            <div class="ui search selection dropdown" id="project">
+              <input type="hidden" name="project">
+              <i class="dropdown icon"></i>
+              <span class="text"></span>
+              <div class="menu">
+                <div class="item" data-value="">None</div>
+                {% for p in projects %}
+                  <div class="item" data-value="{{ p }}">{{ p }}</div>
+                {% endfor %}
+              </div>
+            </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="actions">
+    <div class="ui approve button">Submit</div>
+    <div class="ui cancel button">Cancel</div>
+  </div>
+</div>
+
+<!-- Application Header -->
+<div class="ui inverted basic segment" id="header">
   <div class="ui container">
-    <h1>HyperTrainer</h1>
+    <div class="ui middle aligned two column centered grid">
+      <div class="row">
+        <div class="column">
+          <h1>HyperTrainer</h1>
+        </div>
+
+        <!-- Project selector -->
+        <div class="column">
+          <div class="ui search selection dropdown" id="project-selector" data-selected="{{ cur_proj }}">
+            <i class="dropdown icon"></i>
+            <span class="text"></span>
+            <div class="menu">
+              <div class="item" data-value="">All Projects</div>
+              {% for p in projects %}
+                <div class="item" data-value="{{ p }}">{{ p }}</div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="ui container">
-
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -40,40 +111,10 @@
       {% endif %}
     {% endwith %}
 
-  <div class="ui segment">
-  <h2>Submit new task</h2>
-  <form action="/?action=submit" method="post" class="ui form">
-    <div class="fields">
-      <div class="field">
-        <label for="script">Script</label>
-        <input name="script" id="script" value="dummy.py">
-      </div>
-      <div class="field">
-        <label for="config">Config</label>
-        <input name="config" id="config" value="hp_test.yaml">
-      </div>
-      <div class="field">
-        <label for="platform">Platform</label>
-        <select class="ui dropdown" name="platform" id="platform">
-          <option value="">Platform</option>
-          {% for p in platforms %}
-            <option value="{{ p }}" {{ 'selected="selected"' if p == 'local' else '' }}>{{ p }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="field">
-        <label>&nbsp;</label>
-        <button type="submit" class="ui submit button">Submit</button>
-      </div>
-    </div>
-  </form>
-  </div>
-
-  <h2>Tasks</h2>
-
   <form action="/?action=bulk" method="post" id="bulk">
       <p>
         <a href="/" class="ui compact button basic">Refresh</a>
+        <button type="button" class="ui compact button" id="new-task">New</button>
         <button type="submit" class="ui compact button disabled" name="action" value="Continue">Continue</button>
         <button type="submit" class="ui compact button disabled" name="action" value="Cancel">Cancel</button>
         <button type="submit" class="ui compact button disabled" name="action" value="Delete">Delete</button>
@@ -83,6 +124,7 @@
         </span>
       </p>
 
+      <div id="table-container">
       <table class="ui sortable celled compact table" id="tasks">
         <thead><tr>
           <th class="number">
@@ -98,7 +140,7 @@
           <th>Total TR</th>
           <th>Epoch TR</th>
         </tr></thead>
-        {% if tasks %}
+          {% if tasks %}
             {% for task in tasks %}
               <tr data-id="{{ task.id }}" class="task-row">
                 <td>
@@ -133,6 +175,7 @@
             </tr>
           {% endif %}
       </table>
+      </div>
   </form>
 </div>
 

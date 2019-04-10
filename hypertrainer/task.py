@@ -17,6 +17,7 @@ class Task(BaseModel):
     job_id = CharField(default='')
     platform_type = EnumField(ComputePlatformType, default=ComputePlatformType.LOCAL)
     name = CharField(default='')
+    project = CharField(default='')
     status = EnumField(TaskStatus, default=TaskStatus.Unknown)
     cur_epoch = IntegerField(default=0)
     cur_iter = IntegerField(default=0)

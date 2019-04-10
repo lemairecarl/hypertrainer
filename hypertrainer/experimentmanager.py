@@ -13,17 +13,23 @@ yaml = YAML()
 
 class ExperimentManager:
     @staticmethod
-    def get_all_tasks(do_update=False):
+    def get_all_tasks(do_update=False, proj=None):
         if do_update:
             ExperimentManager.update_statuses()
         # NOTE: statuses are requested asynchronously by the dashboard
-        all_tasks = list(Task.select())
+        q = Task.select()
+        if proj is not None:
+            q = q.where(Task.project == proj)
+        all_tasks = list(q)
         return all_tasks
 
     @staticmethod
-    def get_tasks(platform: ComputePlatformType):
+    def get_tasks(platform: ComputePlatformType, proj=None):
         ExperimentManager.update_statuses(platforms=[platform])  # TODO return tasks to avoid other db query?
-        tasks = list(Task.select().where(Task.platform_type == platform))
+        q = Task.select().where(Task.platform_type == platform)
+        if proj is not None:
+            q = q.where(Task.project == proj)
+        tasks = list(q)
         for t in tasks:
             t.monitor()
         return tasks
@@ -45,7 +51,7 @@ class ExperimentManager:
                     t.save()
 
     @staticmethod
-    def submit(platform: str, script_file: str, config_file: str):
+    def submit(platform: str, script_file: str, config_file: str, project: str = ''):
         # Load yaml config
         config_file_path = resolve_path(config_file)
         yaml_config = yaml.load(config_file_path)
@@ -59,7 +65,8 @@ class ExperimentManager:
         # Make tasks
         tasks = []
         for name, config in configs.items():
-            t = Task(script_file=script_file, config=config, name=name, platform_type=ComputePlatformType(platform))
+            t = Task(script_file=script_file, config=config, name=name, platform_type=ComputePlatformType(platform),
+                     project=project)
             t.save()  # insert in database
             tasks.append(t)
         # Submit tasks
@@ -83,6 +90,10 @@ class ExperimentManager:
     @staticmethod
     def delete_tasks(task_ids: list):
         Task.delete().where(Task.id.in_(task_ids)).execute()
+
+    @staticmethod
+    def list_projects():
+        return [t.project for t in Task.select(Task.project).where(Task.project != '').distinct()]
 
 
 experiment_manager = ExperimentManager()

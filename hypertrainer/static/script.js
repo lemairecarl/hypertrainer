@@ -60,6 +60,26 @@ function filterTable() {
 }
 
 $( document ).ready(function() {
+    $('#project-selector')  // For display
+        .dropdown({
+            action: function(text, value) {
+                p_arg = (value != '') ? '&p=' + value : '';
+                window.location.replace('/?action=chooseproject' + p_arg)
+            }
+        })
+        .dropdown('set selected', $('#project-selector').attr('data-selected'));
+    $('#project.dropdown')  // For new task submission
+        .dropdown({
+            allowAdditions: true
+        })
+        .dropdown('set selected', $('#project-selector').attr('data-selected'));
+    $('button#new-task').click(function() {
+        $('#submit-dialog').modal({
+            onApprove : function() {
+              $('#form-new-task').submit();
+            }
+        }).modal('show');
+    });
     $('table').tablesort()
     $('thead th.number').data(
         'sortBy',
@@ -89,7 +109,7 @@ $( document ).ready(function() {
         }
         event.stopPropagation();
     });
-    $('.button').click(function(event) {
+    $('.button[type=submit]').click(function(event) {
         $(this).addClass('loading');
     });
     $('td.updating').append('<div class="ui active tiny inline loader"></div>');
