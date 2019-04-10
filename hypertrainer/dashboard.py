@@ -63,6 +63,12 @@ def enum_platforms():
 
 @bp.route('/update/<platform>')
 def update(platform):
+    def format_time_delta(seconds):
+        if seconds is None:
+            return ''
+        else:
+            return str(datetime.timedelta(seconds=int(seconds)))
+
     tasks = em.get_tasks(ComputePlatformType(platform))
     data = {}
     for t in tasks:
@@ -70,10 +76,9 @@ def update(platform):
             'status': t.status.value,
             'epoch': t.cur_epoch,
             'total_epochs': get_item_at_path(t.config, 'training.num_epochs', default=None),
-            'iter': t.cur_iter,
-            'iter_per_epoch': t.iter_per_epoch,
-            'ep_time_remain': str(datetime.timedelta(seconds=int(t.ep_time_remain))),
-            'total_time_remain': str(datetime.timedelta(seconds=int(t.total_time_remain)))
+            'iter': f'{t.cur_phase} {t.cur_iter + 1} / {t.iter_per_epoch}',
+            'ep_time_remain': format_time_delta(t.ep_time_remain),
+            'total_time_remain': format_time_delta(t.total_time_remain)
         }
     return jsonify(data)
 

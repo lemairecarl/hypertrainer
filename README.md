@@ -95,6 +95,7 @@ output path of your scripts (which should contain tab-separated values):
 
 * `progress.log`: Training progress at the iteration level. Expected columns:
     * epoch_index
+    * phase (e.g. `'train'` or `'valid'`)
     * iteration_index
     * num_iter_per_epoch
     * unix_timestamp

@@ -15,7 +15,7 @@ function updatePlatform(platform) {
                 // Epoch
                 $("td[data-col='epoch']", row).html((row_data['epoch'] + 1) + ' / ' + row_data['total_epochs']).removeClass('updating');
                 // Iteration
-                $("td[data-col='iteration']", row).html((row_data['iter'] + 1) + ' / ' + row_data['iter_per_epoch']).removeClass('updating');
+                $("td[data-col='iteration']", row).html(row_data['iter']).removeClass('updating');
                 if (row_data['epoch'] > 0) {
                     // Total time remain
                     $("td[data-col='total_time_remain']", row).html(row_data['total_time_remain']).removeClass('updating');
