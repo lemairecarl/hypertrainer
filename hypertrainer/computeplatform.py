@@ -125,7 +125,8 @@ class HeliosPlatform(ComputePlatform):
         'Idle': TaskStatus.Waiting,
         'Running': TaskStatus.Running,
         'Canceling': TaskStatus.Cancelled,
-        'Complete': TaskStatus.Finished
+        'Complete': TaskStatus.Finished,
+        'Removed': TaskStatus.Removed
     }
 
     def __init__(self):
@@ -222,7 +223,7 @@ class HeliosPlatform(ComputePlatform):
             ('$HYPERTRAINER_OUTFILE', task.output_path + '/out.txt'),
             ('$HYPERTRAINER_ERRFILE', task.output_path + '/err.txt'),
             ('$HYPERTRAINER_JOB_DIR', task.output_path),
-            ('$HYPERTRAINER_SCRIPT', f'$HOME/hypertrainer/scripts/{task.script_file}'),
+            ('$HYPERTRAINER_SCRIPT', task.script_file),
             ('$HYPERTRAINER_CONFIGFILE', task.output_path + '/config.yaml'),
             ('$HYPERTRAINER_CONFIGDATA', task.dump_config())
         ]

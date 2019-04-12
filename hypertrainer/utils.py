@@ -70,6 +70,7 @@ class TaskStatus(Enum):
     Finished = 'Finished'
     Cancelled = 'Cancelled'
     Crashed = 'Crashed'
+    Removed = 'Removed'  # on Moab: time exceeded
     Lost = 'Lost'
     Unknown = 'Unknown'
 
