@@ -26,10 +26,9 @@ class ComputePlatform(ABC):
         """Return a dict of logs.
 
         Example: {
-            'stdout': '...',
-            'stderr': '...',
-            'trn_classes_score': '...',
-            ...
+            'out': '...',
+            'err': '...',
+            'metric_loss': '...'
         }
         """
         pass
@@ -41,6 +40,13 @@ class ComputePlatform(ABC):
 
     @abstractmethod
     def get_statuses(self, job_ids) -> dict:
+        """Return a dict mapping job ids to their statuses.
+
+        Example: {
+            '1234': TaskStatus.Running,
+            '5678': TaskStatus.Waiting
+        }
+        """
         pass
 
 
@@ -129,8 +135,8 @@ class HeliosPlatform(ComputePlatform):
         'Removed': TaskStatus.Removed
     }
 
-    def __init__(self):
-        self.server_user = os.environ['HELIOS']
+    def __init__(self, server_user):
+        self.server_user = server_user
         self.submission_template = Path('platform/helios/moab_template.sh').read_text()
         self.setup_template = Path('platform/helios/moab_setup.sh').read_text()
 
@@ -193,7 +199,7 @@ class HeliosPlatform(ComputePlatform):
         return statuses
 
     def _get_completion_codes(self):
-        data = subprocess.run(['ssh', self.server_user, f'showq -u $USER -c | grep $USER'],
+        data = subprocess.run(['ssh', self.server_user, 'showq -u $USER -c | grep $USER'],
                               stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode('utf-8')
         data_grid = parse_columns(data)
         ccodes = {}
@@ -233,9 +239,126 @@ class HeliosPlatform(ComputePlatform):
         return output
 
 
+class SlurmPlatform(ComputePlatform):
+    status_map = {
+        'PD': TaskStatus.Waiting,
+        'R': TaskStatus.Running,
+        'CG': TaskStatus.Running,
+        'CD': TaskStatus.Finished,
+        'F': TaskStatus.Crashed,
+        'CA': TaskStatus.Cancelled,
+        'DL': TaskStatus.Removed,
+        'TO': TaskStatus.Removed
+    }
+
+    def __init__(self, server_user):
+        self.server_user = server_user
+        self.user = server_user.split('@')[0]
+        self.submission_template = Path('platform/slurm/slurm_template.sh').read_text()
+        self.setup_template = Path('platform/slurm/slurm_setup.sh').read_text()
+
+    def submit(self, task, continu=False):
+        job_remote_dir = self._make_job_path(task)
+        if continu:
+            setup_script = self.replace_variables(
+                'cd $HYPERTRAINER_JOB_DIR && sbatch --parsable $HYPERTRAINER_NAME.sh', task)
+        else:
+            task.output_path = job_remote_dir
+            setup_script = self.replace_variables(self.setup_template, task, submission=self.submission_template)
+        completed_process = None
+        try:
+            completed_process = subprocess.run(['ssh', self.server_user],
+                                               input=setup_script.encode(), stdout=subprocess.PIPE,
+                                               stderr=subprocess.PIPE)
+            completed_process.check_returncode()
+        except subprocess.CalledProcessError:
+            print(completed_process.stderr)
+            raise  # FIXME handle error
+        job_id = completed_process.stdout.decode('utf-8').strip()
+        return job_id
+
+    def monitor(self, task, keys=None):
+        logs = {}
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Get all .txt, .log files in output path
+            subprocess.run(['scp', self.server_user + ':' + self._make_job_path(task) + '/*.{log,txt}', tmpdir],
+                           stderr=subprocess.DEVNULL)  # Ignore errors (e.g. if *.log doesn't exist)
+            for f in glob(tmpdir + '/*'):
+                p = Path(f)
+                logs[p.stem] = p.read_text()
+        return logs
+
+    def get_statuses(self, job_ids):
+        statuses = self._get_statuses(job_ids)  # Get statuses of active jobs
+        ccodes = self._get_completion_codes()  # Get statuses for completed jobs
+
+        for job_id in job_ids:
+            if job_id in ccodes:
+                # Job just completed
+                if ccodes[job_id] == 0:
+                    statuses[job_id] = TaskStatus.Finished
+                else:
+                    statuses[job_id] = TaskStatus.Crashed
+            else:
+                # Job still active (or lost)
+                if job_id not in statuses:
+                    statuses[job_id] = TaskStatus.Lost  # Job not found
+        return statuses
+
+    def _get_statuses(self, job_ids):
+        data = subprocess.run(['ssh', self.server_user, 'squeue -u $USER | grep $USER'],
+                              stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode('utf-8')
+        data_grid = parse_columns(data)
+        statuses = {}
+        for l in data_grid:
+            job_id, status = l[0], l[4]
+            if job_id not in job_ids:
+                continue
+            statuses[job_id] = self.status_map[status]
+        return statuses
+
+    def _get_completion_codes(self):
+        data = subprocess.run(['ssh', self.server_user, 'sacct -o JobID,ExitCode -n -s CD,F,CA,DL,TO -S 010100'],
+                              stdout=subprocess.PIPE, stderr=subprocess.DEVNULL).stdout.decode('utf-8')
+        data_grid = parse_columns(data)
+        ccodes = {}
+        for l in data_grid:
+            job_id, ccode = l[0], l[1]
+            if '.' in job_id:
+                continue
+            ccodes[job_id] = int(ccode.split(':')[0])
+        return ccodes
+
+    def cancel(self, task):
+        subprocess.run(['ssh', self.server_user, f'scancel {task.job_id}'])
+        task.status = TaskStatus.Cancelled
+        task.save()
+
+    def _make_job_path(self, task):
+        return '/home/' + self.user + '/hypertrainer/output/' + str(task.id)
+
+    @staticmethod
+    def replace_variables(input_text, task, **kwargs):
+        key_value_map = [
+            ('$HYPERTRAINER_SUBMISSION', kwargs.get('submission', '')),
+            ('$HYPERTRAINER_NAME', task.name),
+            ('$HYPERTRAINER_OUTFILE', task.output_path + '/out.txt'),
+            ('$HYPERTRAINER_ERRFILE', task.output_path + '/err.txt'),
+            ('$HYPERTRAINER_JOB_DIR', task.output_path),
+            ('$HYPERTRAINER_SCRIPT', task.script_file),
+            ('$HYPERTRAINER_CONFIGFILE', task.output_path + '/config.yaml'),
+            ('$HYPERTRAINER_CONFIGDATA', task.dump_config())
+        ]
+        output = input_text
+        for key, value in key_value_map:
+            output = output.replace(key, value)
+        return output
+
+
 class ComputePlatformType(Enum):
     LOCAL = 'local'
     HELIOS = 'helios'
+    GRAHAM = 'graham'
 
 
 # Instantiate ComputePlatform's if available
@@ -243,7 +366,9 @@ platform_instances = {
     ComputePlatformType.LOCAL: LocalPlatform()
 }
 if 'HELIOS' in os.environ:
-    platform_instances[ComputePlatformType.HELIOS] = HeliosPlatform()
+    platform_instances[ComputePlatformType.HELIOS] = HeliosPlatform(server_user=os.environ['HELIOS'])
+if 'GRAHAM' in os.environ:
+    platform_instances[ComputePlatformType.GRAHAM] = SlurmPlatform(server_user=os.environ['GRAHAM'])
 
 
 def get_platform(p_type: ComputePlatformType):

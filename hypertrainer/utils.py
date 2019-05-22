@@ -25,7 +25,8 @@ def resolve_path(path: str) -> Path:
     if not Path(path).exists():
         for p in SCRIPTS_PATH:
             resolved_path = Path(p) / path
-            return resolved_path.absolute()
+            if resolved_path.exists():
+                return resolved_path.absolute()
         raise FileNotFoundError('Could not find \'{}\'. Have you set $HYPERTRAINER_PATH correctly?'.format(path))
     else:
         return Path(path).absolute()

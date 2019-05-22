@@ -28,9 +28,9 @@
 <div class="ui top attached tabular menu">
     {% if viz_scripts %}<a class="item active" data-tab="visualize">Visualize</a>{% endif %}
     {% for k in task.logs.keys() %}
-        <a class="item {{ 'active' if not viz_scripts and k == 'out' else ''}}" data-tab="{{k}}">{{k}}</a>
+        <a class="item {{ 'active' if not viz_scripts and k == selected_log else ''}}" data-tab="{{k}}">{{k}}</a>
     {% endfor %}
-    <a class="item" data-tab="yaml">YAML</a>
+    <a class="item {{ 'active' if not viz_scripts and selected_log == 'yaml' else ''}}" data-tab="yaml">YAML</a>
 </div>
 {% if viz_scripts %}
     <div class="ui bottom attached tab segment active" data-tab="visualize">
@@ -41,10 +41,10 @@
     </div>
 {% endif %}
 {% for k, v in task.logs.items() %}
-    <div class="ui bottom attached tab segment {{ 'active' if not viz_scripts and k == 'out' else ''}}" data-tab="{{k}}">
+    <div class="ui bottom attached tab segment {{ 'active' if not viz_scripts and k == selected_log else ''}}" data-tab="{{k}}">
         <pre>{{v}}</pre>
     </div>
 {% endfor %}
-<div class="ui bottom attached tab segment " data-tab="yaml">
+<div class="ui bottom attached tab segment {{ 'active' if not viz_scripts and selected_log == 'yaml' else ''}}" data-tab="yaml">
     <pre>{{ task.dump_config() }}</pre>
 </div>

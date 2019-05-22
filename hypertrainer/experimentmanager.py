@@ -41,14 +41,16 @@ class ExperimentManager:
         for ptype in platforms:
             platform = get_platform(ptype)
             tasks = list(Task.select().where(Task.platform_type == ptype))
+            tasks = [t for t in tasks if t.status.is_active()]
+            if len(tasks) == 0:
+                continue
             job_ids = [t.job_id for t in tasks]
             get_db().close()  # Close db since the following may take time
             statuses = platform.get_statuses(job_ids)
             get_db().connect()
             for t in tasks:
-                if t.status.is_active():
-                    t.status = statuses[t.job_id]
-                    t.save()
+                t.status = statuses[t.job_id]
+                t.save()
 
     @staticmethod
     def submit(platform: str, script_file: str, config_file: str, project: str = ''):

@@ -48,10 +48,7 @@ def index():
 def monitor(task_id):
     task = Task.get(Task.id == task_id)
     task.monitor()
-    if 'out' in task.logs:
-        selected_log = 'out'
-    else:
-        selected_log = next(iter(task.logs.keys()))
+    selected_log = 'out' if 'out' in task.logs else 'yaml'
 
     viz_scripts, viz_divs = None, None
     if len(task.metrics) > 0:
