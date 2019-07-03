@@ -161,7 +161,7 @@
                 {{ task.status.value }}
               </td>
               <td data-col="epoch" class="{{ 'updating' if task.status.is_active() else '' }}">
-                {{ task.cur_epoch + 1 }} / {{ task.config.training.num_epochs }}
+                {{ task.cur_epoch }} / {{ task.config.training.num_epochs }}
               </td>
               <td data-col="iteration" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
               <td data-col="total_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>

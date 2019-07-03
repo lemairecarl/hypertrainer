@@ -109,9 +109,12 @@ class Task(BaseModel):
                             durations = epochs_times[1:] - epochs_times[:-1]
                             self.epoch_duration = np.mean(durations)  # TODO more weight to last epochs?
                             cur_ep_elapsed = time() - epochs_times[-1]
-                            self.ep_time_remain = max(self.epoch_duration - cur_ep_elapsed, 0)
+                            self.ep_time_remain = self.epoch_duration - cur_ep_elapsed
                             epochs_remaining = get_item_at_path(self.config, 'training.num_epochs') - self.cur_epoch - 1
                             self.total_time_remain = self.ep_time_remain + self.epoch_duration * epochs_remaining
+
+                            self.ep_time_remain = max(self.ep_time_remain, 0)
+                            self.total_time_remain = max(self.total_time_remain, 0)
                         # Iterations
                         self.cur_iter = int(df.tail(1).iter_idx)
                         self.iter_per_epoch = int(df.tail(1).iter_per_epoch)
@@ -120,7 +123,7 @@ class Task(BaseModel):
                 elif name.startswith('metric_'):
                     data = parse_columns(log)
                     if data:
-                        data = data if int(data[0][0]) == 0 else data[1:]  # Handle presence/absence of header
+                        data = data if data[0][0].isdigit() else data[1:]  # Handle presence/absence of header
                         m_name = name.partition('_')[2]  # Example: 'd_j_trump'.partition('_') -> ('d', '_', 'j_trump')
                         if name.startswith('metric_classwise_'):
                             m_name = m_name.partition('_')[2]

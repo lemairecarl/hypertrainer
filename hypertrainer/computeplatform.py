@@ -254,8 +254,8 @@ class SlurmPlatform(ComputePlatform):
     def __init__(self, server_user):
         self.server_user = server_user
         self.user = server_user.split('@')[0]
-        self.submission_template = Path('platform/slurm/slurm_template.sh').read_text()
-        self.setup_template = Path('platform/slurm/slurm_setup.sh').read_text()
+        self.submission_template = Path('platform/slurm/slurm_template.sh')
+        self.setup_template = Path('platform/slurm/slurm_setup.sh')
 
     def submit(self, task, continu=False):
         job_remote_dir = self._make_job_path(task)
@@ -264,7 +264,8 @@ class SlurmPlatform(ComputePlatform):
                 'cd $HYPERTRAINER_JOB_DIR && sbatch --parsable $HYPERTRAINER_NAME.sh', task)
         else:
             task.output_path = job_remote_dir
-            setup_script = self.replace_variables(self.setup_template, task, submission=self.submission_template)
+            setup_script = self.replace_variables(self.setup_template.read_text(), task,
+                                                  submission=self.submission_template.read_text())
         completed_process = None
         try:
             completed_process = subprocess.run(['ssh', self.server_user],
@@ -359,6 +360,7 @@ class ComputePlatformType(Enum):
     LOCAL = 'local'
     HELIOS = 'helios'
     GRAHAM = 'graham'
+    BELUGA = 'beluga'
 
 
 # Instantiate ComputePlatform's if available
@@ -369,6 +371,8 @@ if 'HELIOS' in os.environ:
     platform_instances[ComputePlatformType.HELIOS] = HeliosPlatform(server_user=os.environ['HELIOS'])
 if 'GRAHAM' in os.environ:
     platform_instances[ComputePlatformType.GRAHAM] = SlurmPlatform(server_user=os.environ['GRAHAM'])
+if 'BELUGA' in os.environ:
+    platform_instances[ComputePlatformType.BELUGA] = SlurmPlatform(server_user=os.environ['BELUGA'])
 
 
 def get_platform(p_type: ComputePlatformType):
