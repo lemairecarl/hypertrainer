@@ -7,7 +7,7 @@ from pathlib import Path
 from glob import glob
 import tempfile
 
-from hypertrainer.utils import TaskStatus, parse_columns, resolve_path
+from hypertrainer.utils import TaskStatus, parse_columns, resolve_path, yaml
 
 
 class ComputePlatform(ABC):
@@ -80,7 +80,10 @@ class LocalPlatform(ComputePlatform):
             config_file.write_text(task.dump_config())
         # Launch process
         script_file_local = resolve_path(task.script_file)
-        p = subprocess.Popen(['python', str(script_file_local), str(config_file)],
+        python_env_command = get_python_env_command(script_file_local, task.platform_type.value)  # default: ['python']
+        print('Using env:', python_env_command)
+
+        p = subprocess.Popen(python_env_command + [str(script_file_local), str(config_file)],
                              stdout=task.stdout_path.open(mode='w'),
                              stderr=task.stderr_path.open(mode='w'),
                              cwd=task.output_path,
@@ -390,3 +393,18 @@ def list_platforms(as_str=False):
         return [p.value for p in platform_instances.keys()]
     else:
         return list(platform_instances.keys())
+
+
+def get_python_env_command(script_file_local: Path, platform: str):
+    env_config_file = script_file_local.parent / 'env.yaml'
+    if not env_config_file.exists:
+        return ['python']
+
+    env_config = yaml.load(env_config_file)[platform]
+    if env_config['conda']:
+        if 'path' in env_config:
+            return [env_config['conda_bin'], 'run', '-p', env_config['path'], 'python']
+        else:
+            return [env_config['conda_bin'], 'run', '-n', env_config['name'], 'python']
+    else:
+        return [env_config['path'] + '/bin/python']
