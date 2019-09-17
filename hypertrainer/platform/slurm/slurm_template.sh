@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # Request resources
-#SBATCH --account def-rodrigu1
-#SBATCH --time=0-0:10             # time (DD-HH:MM)
-#SBATCH --mem=16000M               # memory (per node)
-#SBATCH --cpus-per-task=4          # Number of cores (not cpus)
-#SBATCH --gres=gpu:1               # Number of GPUs (per node)
+#SBATCH --account def-lemc2220
+#SBATCH --time=0-0:01             # time (DD-HH:MM)
+#XXSBATCH --mem=2000M               # memory (per node)
+#SBATCH --cpus-per-task=1          # Number of cores (not cpus)
+#XXSBATCH --gres=gpu:1               # Number of GPUs (per node)
 #SBATCH -o $HYPERTRAINER_OUTFILE
 #SBATCH -e $HYPERTRAINER_ERRFILE
 # ---------------------------------------------------------
