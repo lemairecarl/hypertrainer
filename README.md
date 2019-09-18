@@ -62,6 +62,9 @@ script `dummy.py` with the config `epochs_test.yaml`. Be sure to select the
 "local" platform. After having clicked "Submit", you should see the task appear
 in the table.
 
+To execute your script in a virtualenv (or conda env), add a `env.yaml` file next
+to the script. To know the format, please refer to [hypertrainer/sample/env.yaml](https://raw.githubusercontent.com/lemairecarl/hypertrainer/master/hypertrainer/sample/env.yaml).
+
 ### 3. Monitor a task
 
 When you refresh the dashboard, a number of columns will update to inform you
