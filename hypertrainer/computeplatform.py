@@ -399,7 +399,7 @@ def get_python_env_command(script_file_local: Path, platform: str):
     default_interpreter = ['python']
 
     env_config_file = script_file_local.parent / 'env.yaml'
-    if not env_config_file.exists:
+    if not env_config_file.exists():
         return default_interpreter
 
     env_configs = yaml.load(env_config_file)
