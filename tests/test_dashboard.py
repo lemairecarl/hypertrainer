@@ -22,7 +22,7 @@ def test_submit(client):
     yaml = YAML()
 
     # 1. Launch task
-    experiment_manager.submit(script_file='script_test_submit.py', config_file='test_submit.yaml', platform='local')
+    experiment_manager.create_tasks(script_file='script_test_submit.py', config_file='test_submit.yaml', platform='local')
 
     # 2. Wait for it to finish, then get tasks
     sleep(2)
@@ -72,7 +72,7 @@ def test_continue(client):
     from hypertrainer.task import Task
     from hypertrainer.utils import TaskStatus
 
-    experiment_manager.submit(script_file='script_test_continue.py', config_file='test_continue.yaml', platform='local')
+    experiment_manager.create_tasks(script_file='script_test_continue.py', config_file='test_continue.yaml', platform='local')
     sleep(1)
 
     tasks = experiment_manager.get_all_tasks(do_update=True)
