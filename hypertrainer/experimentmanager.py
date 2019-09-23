@@ -2,7 +2,7 @@ from typing import Union
 
 from ruamel.yaml import YAML
 
-from hypertrainer.computeplatform import ComputePlatformType, get_platform, list_platforms
+from hypertrainer.computeplatform import ComputePlatformType, platform_instances, list_platforms, get_platform
 from hypertrainer.task import Task
 from hypertrainer.db import get_db
 from hypertrainer.hpsearch import generate as generate_hpsearch
@@ -33,7 +33,7 @@ class ExperimentManager:
         q = q.order_by(Task.id.desc())
         tasks = list(q)
         for t in tasks:
-            t.monitor()
+            ExperimentManager.monitor(t)
         return tasks
 
     @staticmethod
@@ -41,7 +41,7 @@ class ExperimentManager:
         if platforms is None:
             platforms = list_platforms()
         for ptype in platforms:
-            platform = get_platform(ptype)
+            platform = platform_instances[ptype]
             tasks = list(Task.select().where(Task.platform_type == ptype))
             tasks = [t for t in tasks if t.status.is_active()]
             if len(tasks) == 0:
@@ -55,7 +55,7 @@ class ExperimentManager:
                 t.save()
 
     @staticmethod
-    def submit(platform: str, script_file: str, config_file: str, project: str = ''):
+    def create_tasks(platform: str, script_file: str, config_file: str, project: str = ''):
         # Load yaml config
         config_file_path = resolve_path(config_file)
         yaml_config = yaml.load(config_file_path)
@@ -68,28 +68,41 @@ class ExperimentManager:
             configs = {name: yaml_config}
         # Make tasks
         tasks = []
+        ptype = ComputePlatformType(platform)
         for name, config in configs.items():
-            t = Task(script_file=script_file, config=config, name=name, platform_type=ComputePlatformType(platform),
-                     project=project)
+            t = Task(script_file=script_file, config=config, name=name, platform_type=ptype, project=project)
             t.save()  # insert in database
             tasks.append(t)
         # Submit tasks
         for t in tasks:
-            t.submit()  # FIXME submit all at once!
+            ExperimentManager.submit_task(t)  # TODO submit in batch to server!
+
+    @staticmethod
+    def submit_task(task: Task):
+        task.job_id = get_platform(task).submit(task)
+        task.post_submit()
 
     @staticmethod
     def continue_tasks(task_ids: list):
         tasks = list(Task.select().where(Task.id.in_(task_ids)))
         for t in tasks:
             if not t.status.is_active():
-                t.continu()  # TODO one bulk ssh command
+                t.job_id = get_platform(t).submit(t, continu=True)  # TODO one bulk ssh command
+                t.post_continue()
 
     @staticmethod
     def cancel_tasks(task_ids: list):
         tasks = list(Task.select().where(Task.id.in_(task_ids)))
         for t in tasks:
             if t.status.is_active():
-                t.cancel()  # TODO one bulk ssh command
+                get_platform(t).cancel(t)  # TODO one bulk ssh command
+                t.post_cancel()
+
+    @staticmethod
+    def monitor(t: Task):
+        # TODO rename this method 'update' or something?
+        t.logs = get_platform(t).fetch_logs(t)
+        t.interpret_logs()
 
     @staticmethod
     def delete_tasks(task_ids: list):
@@ -100,4 +113,4 @@ class ExperimentManager:
         return [t.project for t in Task.select(Task.project).where(Task.project != '').distinct()]
 
 
-experiment_manager = ExperimentManager()
+experiment_manager = ExperimentManager()  # FIXME do not instantiate, it is just a namespace

@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from time import time
 
@@ -6,7 +5,7 @@ import numpy as np
 import pandas as pd
 from peewee import CharField, IntegerField, FloatField
 
-from hypertrainer.computeplatform import ComputePlatformType, get_platform
+from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.db import BaseModel, EnumField, YamlField, get_db
 from hypertrainer.utils import TaskStatus, set_item_at_path, get_item_at_path, yaml_to_str, parse_columns
 
@@ -32,11 +31,6 @@ class Task(BaseModel):
         self.total_time_remain = None
         self.ep_time_remain = None
         self.cur_phase = None
-
-    @property
-    def platform(self):
-        self.platform_type: ComputePlatformType  # because PyCharm is confused
-        return get_platform(self.platform_type)
 
     @property
     def is_running(self):
@@ -71,28 +65,25 @@ class Task(BaseModel):
     def num_epochs(self):
         return get_item_at_path(self.config, 'training.num_epochs')
 
-    def submit(self):
-        self.job_id = self.platform.submit(self)
+    def post_submit(self):
+        """Called after submit event"""
         self.save()
 
-    def continu(self):
-        self.job_id = self.platform.submit(self, continu=True)
+    def post_continue(self):
+        """Called after continue event"""
         self.status = TaskStatus.Unknown
         self.save()
 
-    def cancel(self):
-        self.platform.cancel(self)
+    def post_cancel(self):
+        """Called after cancel event"""
         self.save()
 
-    def monitor(self):
-        # Retrieve logs
-        get_db().close()
-        self.logs = self.platform.monitor(self)
-        get_db().connect()
+    def interpret_logs(self):
+        logs = self.logs
 
         # Interpret logs
         try:
-            for name, log in self.logs.items():
+            for name, log in logs.items():
                 if name == 'progress':
                     # Columns = epoch_idx, iter_idx, iter_per_epoch, unix_timestamp
                     data = parse_columns(log)
@@ -144,8 +135,8 @@ class Task(BaseModel):
             print(e)
 
         # Remove logs that have been interpreted
-        for k in [k for k in self.logs.keys() if k.startswith('metric_') or k in {'progress'}]:
-            del self.logs[k]
+        for k in [k for k in logs.keys() if k.startswith('metric_') or k in {'progress'}]:
+            del logs[k]
 
     def dump_config(self):
         return yaml_to_str(self.config)

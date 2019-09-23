@@ -2,11 +2,12 @@ import os
 import signal
 import subprocess
 from abc import ABC, abstractmethod
-from enum import Enum
 from pathlib import Path
 from glob import glob
 import tempfile
 
+from hypertrainer.computeplatformtype import ComputePlatformType
+from hypertrainer.task import Task
 from hypertrainer.utils import TaskStatus, parse_columns, resolve_path, yaml
 
 
@@ -22,7 +23,7 @@ class ComputePlatform(ABC):
         pass
 
     @abstractmethod
-    def monitor(self, task, keys=None):
+    def fetch_logs(self, task, keys=None):
         """Return a dict of logs.
 
         Example: {
@@ -92,7 +93,7 @@ class LocalPlatform(ComputePlatform):
         self.processes[job_id] = p
         return job_id
 
-    def monitor(self, task, keys=None):
+    def fetch_logs(self, task, keys=None):
         job_path = self._make_job_path(task)
         logs = {}
         patterns = ('*.log', '*.txt')
@@ -167,7 +168,7 @@ class SlurmPlatform(ComputePlatform):
         job_id = completed_process.stdout.decode('utf-8').strip()
         return job_id
 
-    def monitor(self, task, keys=None):
+    def fetch_logs(self, task, keys=None):
         logs = {}
         with tempfile.TemporaryDirectory() as tmpdir:
             # Get all .txt, .log files in output path
@@ -245,27 +246,19 @@ class SlurmPlatform(ComputePlatform):
         return output
 
 
-class ComputePlatformType(Enum):
-    LOCAL = 'local'
-    HELIOS = 'helios'
-    GRAHAM = 'graham'
-    BELUGA = 'beluga'
-
-
+# TODO refactor (code in between function definitions)
 # Instantiate ComputePlatform's if available
 platform_instances = {
     ComputePlatformType.LOCAL: LocalPlatform()
 }
-if 'HELIOS' in os.environ:
-    platform_instances[ComputePlatformType.HELIOS] = HeliosPlatform(server_user=os.environ['HELIOS'])
 if 'GRAHAM' in os.environ:
     platform_instances[ComputePlatformType.GRAHAM] = SlurmPlatform(server_user=os.environ['GRAHAM'])
 if 'BELUGA' in os.environ:
     platform_instances[ComputePlatformType.BELUGA] = SlurmPlatform(server_user=os.environ['BELUGA'])
 
 
-def get_platform(p_type: ComputePlatformType):
-    return platform_instances[p_type]
+def get_platform(task: Task):
+    return platform_instances[task.platform_type]
 
 
 def list_platforms(as_str=False):

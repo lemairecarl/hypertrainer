@@ -47,7 +47,7 @@ def index():
 @bp.route('/monitor/<task_id>')
 def monitor(task_id):
     task = Task.get(Task.id == task_id)
-    task.monitor()
+    em.monitor(task)
     selected_log = 'out' if 'out' in task.logs else 'yaml'
 
     viz_scripts, viz_divs = None, None
@@ -90,7 +90,7 @@ def submit():
     script_file = request.form['script']
     config_file = request.form['config']
     project = request.form['project']
-    em.submit(platform, script_file, config_file, project=project)
+    em.create_tasks(platform, script_file, config_file, project=project)
     flash('Submitted "{}" with "{}" on {}.'.format(script_file, config_file, platform), 'success')
     return redirect(url_for('index'))
 

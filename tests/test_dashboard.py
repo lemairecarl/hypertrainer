@@ -38,7 +38,7 @@ def test_submit(client):
                                                              'dummy_param_exp2', 'dummy_param_lin'])
 
         # Check output
-        t.monitor()
+        experiment_manager.monitor(t)
         assert t.logs['err'].strip() == 'printing to stderr'
         assert t.logs['out'].strip() == 'printing to stdout'
 
