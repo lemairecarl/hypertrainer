@@ -20,6 +20,7 @@ class ExperimentManager:
         q = Task.select()
         if proj is not None:
             q = q.where(Task.project == proj)
+        q = q.order_by(Task.id.desc())
         all_tasks = list(q)
         return all_tasks
 
@@ -29,6 +30,7 @@ class ExperimentManager:
         q = Task.select().where(Task.platform_type == platform)
         if proj is not None:
             q = q.where(Task.project == proj)
+        q = q.order_by(Task.id.desc())
         tasks = list(q)
         for t in tasks:
             t.monitor()

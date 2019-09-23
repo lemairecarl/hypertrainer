@@ -147,6 +147,7 @@
           <th>Epoch TR</th>
         </tr>
         </thead>
+        <tbody>
         {% if tasks %}
           {% for task in tasks %}
             <tr data-id="{{ task.id }}" class="task-row">
@@ -181,6 +182,7 @@
             <td></td>
           </tr>
         {% endif %}
+        </tbody>
       </table>
     </div>
   </form>

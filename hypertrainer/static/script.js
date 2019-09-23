@@ -82,7 +82,7 @@ $( document ).ready(function() {
             }
         }).modal('show');
     });
-    $('table').tablesort()
+    $('table').tablesort();
     $('thead th.number').data(
         'sortBy',
         function(th, td, tablesort) {
@@ -93,7 +93,7 @@ $( document ).ready(function() {
         $('.toggle-job').prop('checked', $(this).prop('checked'));
         event.stopPropagation();
     });
-    $('tr').click(function() {
+    $('tbody tr').click(function() {
         // checkbox = $('.toggle-job', this);
         // checkbox.prop('checked', !checkbox.prop('checked'));
 
