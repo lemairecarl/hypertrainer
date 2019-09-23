@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Iterable
 
 from ruamel.yaml import YAML
 
@@ -83,16 +83,18 @@ class ExperimentManager:
         task.post_submit()
 
     @staticmethod
-    def continue_tasks(task_ids: list):
-        tasks = list(Task.select().where(Task.id.in_(task_ids)))
+    def get_tasks_by_id(task_ids: list):
+        return list(Task.select().where(Task.id.in_(task_ids)))
+
+    @staticmethod
+    def continue_tasks(tasks: Iterable[Task]):
         for t in tasks:
             if not t.status.is_active():
                 t.job_id = get_platform(t).submit(t, continu=True)  # TODO one bulk ssh command
                 t.post_continue()
 
     @staticmethod
-    def cancel_tasks(task_ids: list):
-        tasks = list(Task.select().where(Task.id.in_(task_ids)))
+    def cancel_tasks(tasks: Iterable[Task]):
         for t in tasks:
             if t.status.is_active():
                 get_platform(t).cancel(t)  # TODO one bulk ssh command
@@ -105,7 +107,7 @@ class ExperimentManager:
         t.interpret_logs()
 
     @staticmethod
-    def delete_tasks(task_ids: list):
+    def delete_tasks_by_id(task_ids: list):
         Task.delete().where(Task.id.in_(task_ids)).execute()
 
     @staticmethod

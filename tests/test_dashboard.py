@@ -80,7 +80,7 @@ def test_continue(client):
     t = tasks[0]  # type: Task
     assert t.status == TaskStatus.Finished
 
-    t.continu()
+    experiment_manager.continue_tasks([t])
     sleep(1)
 
     tasks = experiment_manager.get_all_tasks(do_update=True)
