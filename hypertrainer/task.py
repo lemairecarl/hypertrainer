@@ -43,11 +43,11 @@ class Task(BaseModel):
         return self.status == TaskStatus.Running
 
     @property
-    def stdout_path(self):
+    def stdout_path(self) -> Path:
         return Path(self.output_path) / 'out.txt'
 
     @property
-    def stderr_path(self):
+    def stderr_path(self) -> Path:
         return Path(self.output_path) / 'err.txt'
 
     @property
