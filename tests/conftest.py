@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 from hypertrainer import create_app
-from hypertrainer.computeplatform import LinuxPlatform
+from hypertrainer.linuxplatform import LinuxPlatform
 import hypertrainer.utils
 
 

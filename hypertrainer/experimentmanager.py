@@ -1,8 +1,11 @@
+import os
 from typing import Iterable
 
 from ruamel.yaml import YAML
 
-from hypertrainer.computeplatform import ComputePlatformType, platform_instances, list_platforms, get_platform
+from hypertrainer.computeplatformtype import ComputePlatformType
+from hypertrainer.linuxplatform import LinuxPlatform
+from hypertrainer.slurmplatform import SlurmPlatform
 from hypertrainer.task import Task
 from hypertrainer.db import get_db
 from hypertrainer.hpsearch import generate as generate_hpsearch
@@ -12,6 +15,22 @@ yaml = YAML()
 
 
 class ExperimentManager:
+    platform_instances = None
+
+    @staticmethod
+    def init():
+        # TODO initialize from config yaml instead of env vars
+        # Instantiate ComputePlatform's if available
+        ExperimentManager.platform_instances = {
+            ComputePlatformType.LOCAL: LinuxPlatform()
+        }
+        if 'GRAHAM' in os.environ:
+            ExperimentManager.platform_instances[ComputePlatformType.GRAHAM] \
+                = SlurmPlatform(server_user=os.environ['GRAHAM'])
+        if 'BELUGA' in os.environ:
+            ExperimentManager.platform_instances[ComputePlatformType.BELUGA] \
+                = SlurmPlatform(server_user=os.environ['BELUGA'])
+
     @staticmethod
     def get_all_tasks(do_update=False, proj=None):
         if do_update:
@@ -39,9 +58,9 @@ class ExperimentManager:
     @staticmethod
     def update_statuses(platforms: list = None):
         if platforms is None:
-            platforms = list_platforms()
+            platforms = ExperimentManager.list_platforms()
         for ptype in platforms:
-            platform = platform_instances[ptype]
+            platform = ExperimentManager.platform_instances[ptype]
             tasks = list(Task.select().where(Task.platform_type == ptype))
             tasks = [t for t in tasks if t.status.is_active()]
             if len(tasks) == 0:
@@ -79,7 +98,7 @@ class ExperimentManager:
 
     @staticmethod
     def submit_task(task: Task):
-        task.job_id = get_platform(task).submit(task)
+        task.job_id = ExperimentManager.get_platform(task).submit(task)
         task.post_submit()
 
     @staticmethod
@@ -90,20 +109,20 @@ class ExperimentManager:
     def continue_tasks(tasks: Iterable[Task]):
         for t in tasks:
             if not t.status.is_active():
-                t.job_id = get_platform(t).submit(t, continu=True)  # TODO one bulk ssh command
+                t.job_id = ExperimentManager.get_platform(t).submit(t, continu=True)  # TODO one bulk ssh command
                 t.post_continue()
 
     @staticmethod
     def cancel_tasks(tasks: Iterable[Task]):
         for t in tasks:
             if t.status.is_active():
-                get_platform(t).cancel(t)  # TODO one bulk ssh command
+                ExperimentManager.get_platform(t).cancel(t)  # TODO one bulk ssh command
                 t.post_cancel()
 
     @staticmethod
     def monitor(t: Task):
         # TODO rename this method 'update' or something?
-        t.logs = get_platform(t).fetch_logs(t)
+        t.logs = ExperimentManager.get_platform(t).fetch_logs(t)
         t.interpret_logs()
 
     @staticmethod
@@ -114,5 +133,23 @@ class ExperimentManager:
     def list_projects():
         return [t.project for t in Task.select(Task.project).where(Task.project != '').distinct()]
 
+    @staticmethod
+    def get_platform(task: Task):
+        return ExperimentManager.platform_instances[task.platform_type]
+
+    @staticmethod
+    def list_platforms(as_str=False):
+        """Lists available platforms.
+
+        Use this instead of list(ComputePlatformType), as it would contain all *implemented* platforms, including those
+        that are not available.
+        """
+
+        if as_str:
+            return [p.value for p in ExperimentManager.platform_instances.keys()]
+        else:
+            return list(ExperimentManager.platform_instances.keys())
+
 
 experiment_manager = ExperimentManager()  # FIXME do not instantiate, it is just a namespace
+experiment_manager.init()

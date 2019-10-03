@@ -5,7 +5,7 @@ from flask import (
 )
 
 from hypertrainer import viz
-from hypertrainer.computeplatform import ComputePlatformType, list_platforms
+from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.task import Task
 from hypertrainer.experimentmanager import experiment_manager as em
 from hypertrainer.utils import get_item_at_path
@@ -40,7 +40,7 @@ def index():
         flash('ERROR: Unrecognized action!', 'error')
     return render_template('index.html',
                            tasks=em.get_all_tasks(proj=session.get('project')),
-                           platforms=list_platforms(as_str=True), projects=em.list_projects(),
+                           platforms=em.list_platforms(as_str=True), projects=em.list_projects(),
                            cur_proj=session.get('project'))
 
 
@@ -60,7 +60,7 @@ def monitor(task_id):
 
 @bp.route('/enum')
 def enum_platforms():
-    return jsonify(list_platforms(as_str=True))
+    return jsonify(em.list_platforms(as_str=True))
 
 
 @bp.route('/update/<platform>')
