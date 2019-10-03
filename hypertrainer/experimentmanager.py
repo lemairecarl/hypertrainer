@@ -4,7 +4,7 @@ from typing import Iterable
 from ruamel.yaml import YAML
 
 from hypertrainer.computeplatformtype import ComputePlatformType
-from hypertrainer.linuxplatform import LinuxPlatform
+from hypertrainer.localplatform import LocalPlatform
 from hypertrainer.slurmplatform import SlurmPlatform
 from hypertrainer.task import Task
 from hypertrainer.db import get_db
@@ -22,7 +22,7 @@ class ExperimentManager:
         # TODO initialize from config yaml instead of env vars
         # Instantiate ComputePlatform's if available
         ExperimentManager.platform_instances = {
-            ComputePlatformType.LOCAL: LinuxPlatform()
+            ComputePlatformType.LOCAL: LocalPlatform()
         }
         if 'GRAHAM' in os.environ:
             ExperimentManager.platform_instances[ComputePlatformType.GRAHAM] \

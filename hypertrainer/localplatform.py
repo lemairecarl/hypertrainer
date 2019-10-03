@@ -7,7 +7,7 @@ from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.utils import resolve_path, TaskStatus, yaml
 
 
-class LinuxPlatform(ComputePlatform):
+class LocalPlatform(ComputePlatform):
     root_dir: Path = None
 
     def __init__(self):
@@ -20,12 +20,12 @@ class LinuxPlatform(ComputePlatform):
         # Setup root output dir
         p = os.environ.get('HYPERTRAINER_OUTPUT')
         if p is None:
-            LinuxPlatform.root_dir = Path.home() / 'hypertrainer' / 'output'
+            LocalPlatform.root_dir = Path.home() / 'hypertrainer' / 'output'
             print('Using root output dir: {}\nYou can configure this with $HYPERTRAINER_OUTPUT.'
-                  .format(LinuxPlatform.root_dir))
+                  .format(LocalPlatform.root_dir))
         else:
-            LinuxPlatform.root_dir = Path(p)
-        LinuxPlatform.root_dir.mkdir(parents=True, exist_ok=True)
+            LocalPlatform.root_dir = Path(p)
+        LocalPlatform.root_dir.mkdir(parents=True, exist_ok=True)
 
     def submit(self, task, continu=False):
         job_path = self._make_job_path(task)

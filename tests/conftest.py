@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 from hypertrainer import create_app
-from hypertrainer.linuxplatform import LinuxPlatform
+from hypertrainer.localplatform import LocalPlatform
 import hypertrainer.utils
 
 
@@ -20,7 +20,7 @@ def client():
     })
     client = app.test_client()
 
-    LinuxPlatform.setup_output_path()
+    LocalPlatform.setup_output_path()
     hypertrainer.utils.setup_scripts_path()
 
     with app.app_context():
