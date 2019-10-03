@@ -3,5 +3,5 @@ secs_per_iter: 1
 # die_after: 7
 
 training:
-  output_path: dummy
+  output_path: dummy_output_path
   num_epochs: 3
