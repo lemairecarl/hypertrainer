@@ -1,13 +1,14 @@
 from celery import Celery
 
 from hypertrainer.computeplatform import ComputePlatform
+from hypertrainer.utils import TaskStatus
+
+app = Celery('hypertrainer.celeryplatform', backend='rpc://', broker='amqp://localhost')
 
 
 class CeleryPlatform(ComputePlatform):
-    app = Celery('tasks', backend='rpc://', broker='amqp://localhost')
-
     def submit(self, task, continu=False) -> str:
-        run.delay(task, continu)
+        run.delay(task.script_file, task.dump_config())
         return 'celeryDummy'
 
     def fetch_logs(self, task, keys=None):
@@ -17,10 +18,10 @@ class CeleryPlatform(ComputePlatform):
         pass
 
     def get_statuses(self, job_ids) -> dict:
-        return {}
+        return {'': TaskStatus.Unknown, 'celeryDummy': TaskStatus.Unknown}
 
 
-@CeleryPlatform.app.task
-def run(task, continu=False):
-    print(task.script_file)
-    print(task.dump_config())
+@app.task
+def run(script, task_config):
+    print(script)
+    print(task_config)
