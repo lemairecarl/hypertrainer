@@ -51,7 +51,7 @@ class ComputePlatform(ABC):
         pass
 
 
-class LocalPlatform(ComputePlatform):
+class LinuxPlatform(ComputePlatform):
     root_dir: Path = None
 
     def __init__(self):
@@ -64,12 +64,12 @@ class LocalPlatform(ComputePlatform):
         # Setup root output dir
         p = os.environ.get('HYPERTRAINER_OUTPUT')
         if p is None:
-            LocalPlatform.root_dir = Path.home() / 'hypertrainer' / 'output'
+            LinuxPlatform.root_dir = Path.home() / 'hypertrainer' / 'output'
             print('Using root output dir: {}\nYou can configure this with $HYPERTRAINER_OUTPUT.'
-                  .format(LocalPlatform.root_dir))
+                  .format(LinuxPlatform.root_dir))
         else:
-            LocalPlatform.root_dir = Path(p)
-        LocalPlatform.root_dir.mkdir(parents=True, exist_ok=True)
+            LinuxPlatform.root_dir = Path(p)
+        LinuxPlatform.root_dir.mkdir(parents=True, exist_ok=True)
 
     def submit(self, task, continu=False):
         job_path = self._make_job_path(task)
@@ -249,7 +249,7 @@ class SlurmPlatform(ComputePlatform):
 # TODO refactor (code in between function definitions)
 # Instantiate ComputePlatform's if available
 platform_instances = {
-    ComputePlatformType.LOCAL: LocalPlatform()
+    ComputePlatformType.LOCAL: LinuxPlatform()
 }
 if 'GRAHAM' in os.environ:
     platform_instances[ComputePlatformType.GRAHAM] = SlurmPlatform(server_user=os.environ['GRAHAM'])
