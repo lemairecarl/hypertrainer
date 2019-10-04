@@ -24,7 +24,7 @@ class ExperimentManager:
         # Instantiate ComputePlatform's if available
         ExperimentManager.platform_instances = {
             ComputePlatformType.LOCAL: LocalPlatform(),
-            ComputePlatformType.CELERY: CeleryPlatform()
+            ComputePlatformType.CELERY: CeleryPlatform(['lemc2220-desktop'])  # FIXME config
         }
         if 'GRAHAM' in os.environ:
             ExperimentManager.platform_instances[ComputePlatformType.GRAHAM] \

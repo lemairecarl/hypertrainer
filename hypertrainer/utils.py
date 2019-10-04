@@ -2,7 +2,9 @@ import io
 import os
 from enum import Enum
 from functools import reduce
+from itertools import chain
 from pathlib import Path
+from typing import Iterable
 
 from ruamel.yaml import YAML
 
@@ -63,6 +65,10 @@ def yaml_to_str(obj):
     with io.StringIO() as stream:
         yaml.dump(obj, stream)
         return stream.getvalue()
+
+
+def join_dicts(dicts: Iterable[dict]):
+    return dict(chain(*[list(x.items()) for x in dicts]))
 
 
 class TaskStatus(Enum):

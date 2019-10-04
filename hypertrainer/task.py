@@ -14,6 +14,7 @@ class Task(BaseModel):
     script_file = CharField()  # Relative to the scripts folder, that exists on all platforms TODO document this
     config = YamlField()
     job_id = CharField(default='')
+    hostname = CharField(default='')
     platform_type = EnumField(ComputePlatformType, default=ComputePlatformType.LOCAL)
     name = CharField(default='')
     project = CharField(default='')
