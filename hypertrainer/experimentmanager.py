@@ -108,11 +108,11 @@ class ExperimentManager:
         return list(Task.select().where(Task.id.in_(task_ids)))
 
     @staticmethod
-    def continue_tasks(tasks: Iterable[Task]):
+    def resume_tasks(tasks: Iterable[Task]):
         for t in tasks:
             if not t.status.is_active():
-                t.job_id = ExperimentManager.get_platform(t).submit(t, continu=True)  # TODO one bulk ssh command
-                t.post_continue()
+                t.job_id = ExperimentManager.get_platform(t).submit(t, resume=True)  # TODO one bulk ssh command
+                t.post_resume()
 
     @staticmethod
     def cancel_tasks(tasks: Iterable[Task]):

@@ -69,8 +69,8 @@ class Task(BaseModel):
         """Called after submit event"""
         self.save()
 
-    def post_continue(self):
-        """Called after continue event"""
+    def post_resume(self):
+        """Called after resume event"""
         self.status = TaskStatus.Unknown
         self.save()
 

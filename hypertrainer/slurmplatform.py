@@ -25,9 +25,9 @@ class SlurmPlatform(ComputePlatform):
         self.submission_template = Path('platform/slurm/slurm_template.sh')
         self.setup_template = Path('platform/slurm/slurm_setup.sh')
 
-    def submit(self, task, continu=False):
+    def submit(self, task, resume=False):
         job_remote_dir = self._make_job_path(task)
-        if continu:
+        if resume:
             setup_script = self.replace_variables(
                 'cd $HYPERTRAINER_JOB_DIR && sbatch --parsable $HYPERTRAINER_NAME.sh', task)
         else:

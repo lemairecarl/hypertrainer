@@ -3,12 +3,10 @@ from abc import ABC, abstractmethod
 
 class ComputePlatform(ABC):
     @abstractmethod
-    def submit(self, task, continu=False) -> str:
+    def submit(self, task, resume=False) -> str:
         """Submit a task and return the plaform specific task id.
 
-        If continu=True, run script in already-existing output path.
-
-        Note: since 'continue' is a keyword in Python, I had to choose something else.
+        If resume=True, run script in already-existing output path.
         """
         pass
 

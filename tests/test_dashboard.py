@@ -64,7 +64,7 @@ def test_submit(client):
         assert -2 <= p_lin <= 2
 
 
-def test_continue(client):
+def test_resume(client):
     # Note: client has to be passed to this test to setup the flask app correctly
 
     # Need to be in a flask app context before importing those:
@@ -72,7 +72,7 @@ def test_continue(client):
     from hypertrainer.task import Task
     from hypertrainer.utils import TaskStatus
 
-    experiment_manager.create_tasks(script_file='script_test_continue.py', config_file='test_continue.yaml', platform='local')
+    experiment_manager.create_tasks(script_file='script_test_resume.py', config_file='test_resume.yaml', platform='local')
     sleep(1)
 
     tasks = experiment_manager.get_all_tasks(do_update=True)
@@ -80,14 +80,14 @@ def test_continue(client):
     t = tasks[0]  # type: Task
     assert t.status == TaskStatus.Finished
 
-    experiment_manager.continue_tasks([t])
+    experiment_manager.resume_tasks([t])
     sleep(1)
 
     tasks = experiment_manager.get_all_tasks(do_update=True)
     assert len(tasks) == 1
     t = tasks[0]  # type: Task
     assert t.status == TaskStatus.Finished
-    # Check that there is exactly two X; one for initial submission, one for continue
+    # Check that there is exactly two X; one for initial submission, one for resume
     assert (Path(t.output_path) / 'i_was_here.txt').read_text().strip() == 'XX'
 
 

@@ -27,10 +27,10 @@ class LocalPlatform(ComputePlatform):
             LocalPlatform.root_dir = Path(p)
         LocalPlatform.root_dir.mkdir(parents=True, exist_ok=True)
 
-    def submit(self, task, continu=False):
+    def submit(self, task, resume=False):
         job_path = self._make_job_path(task)
         config_file = job_path / 'config.yaml'
-        if not continu:
+        if not resume:
             # Setup task dir
             job_path.mkdir(parents=True, exist_ok=False)
             task.output_path = str(job_path)

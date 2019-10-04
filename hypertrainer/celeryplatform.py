@@ -19,9 +19,9 @@ class CeleryPlatform(ComputePlatform):
     def __init__(self):
         self.processes = {}
 
-    def submit(self, task, continu=False):
+    def submit(self, task, resume=False):
         task_info = run.s(task.id, task.script_file, task.dump_config(), task.output_path,
-                          continu).apply_async(queue='jobs').get(timeout=2)
+                          resume).apply_async(queue='jobs').get(timeout=2)
         job_id = task_info['job_id']
         self.processes[job_id] = task_info
         return job_id
@@ -66,12 +66,12 @@ def run(_celery_task: CeleryTask,
         script_filename: str,
         config_dump: str,
         output_path: str,
-        continu: bool
+        resume: bool
         ):
     setup_scripts_path()  # FIXME
     job_path = CeleryPlatform.get_root_dir() / str(task_id)  # Gets the job path on the worker
     config_file = job_path / 'config.yaml'
-    if not continu:
+    if not resume:
         # Setup task dir
         job_path.mkdir(parents=True, exist_ok=False)
         output_path = str(job_path)

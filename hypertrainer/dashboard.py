@@ -29,8 +29,8 @@ def index():
             flash('Cancelled task(s) {}.'.format(', '.join(task_ids)))
         elif a == 'Delete':
             em.delete_tasks_by_id(task_ids)
-        elif a == 'Continue':
-            em.continue_tasks(em.get_tasks_by_id(task_ids))
+        elif a == 'Resume':
+            em.resume_tasks(em.get_tasks_by_id(task_ids))
             flash('Resubmitted task(s) {}.'.format(', '.join(task_ids)))
     elif action == 'chooseproject':
         session['project'] = request.args.get('p')
