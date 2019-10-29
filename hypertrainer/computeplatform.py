@@ -27,13 +27,4 @@ class ComputePlatform(ABC):
         """Cancel a task."""
         pass
 
-    @abstractmethod
-    def get_statuses(self, job_ids) -> dict:
-        """Return a dict mapping job ids to their statuses.
-
-        Example: {
-            '1234': TaskStatus.Running,
-            '5678': TaskStatus.Waiting
-        }
-        """
-        pass
+    #TODO update_tasks

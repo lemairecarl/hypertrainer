@@ -8,9 +8,8 @@ from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.localplatform import LocalPlatform
 from hypertrainer.slurmplatform import SlurmPlatform
 from hypertrainer.task import Task
-from hypertrainer.db import get_db
 from hypertrainer.hpsearch import generate as generate_hpsearch
-from hypertrainer.utils import resolve_path
+from hypertrainer.utils import resolve_path, TaskStatus
 
 yaml = YAML()
 
@@ -36,7 +35,7 @@ class ExperimentManager:
     @staticmethod
     def get_all_tasks(do_update=False, proj=None):
         if do_update:
-            ExperimentManager.update_statuses()
+            ExperimentManager.update_tasks()
         # NOTE: statuses are requested asynchronously by the dashboard
         q = Task.select()
         if proj is not None:
@@ -47,7 +46,7 @@ class ExperimentManager:
 
     @staticmethod
     def get_tasks(platform: ComputePlatformType, proj=None):
-        ExperimentManager.update_statuses(platforms=[platform])  # TODO return tasks to avoid other db query?
+        ExperimentManager.update_tasks(platforms=[platform])  # TODO return tasks to avoid other db query?
         q = Task.select().where(Task.platform_type == platform)
         if proj is not None:
             q = q.where(Task.project == proj)
@@ -58,22 +57,16 @@ class ExperimentManager:
         return tasks
 
     @staticmethod
-    def update_statuses(platforms: list = None):
+    def update_tasks(platforms: list = None):
         if platforms is None:
             platforms = ExperimentManager.list_platforms()
         for ptype in platforms:
             platform = ExperimentManager.platform_instances[ptype]
             tasks = list(Task.select().where(Task.platform_type == ptype))
-            tasks = [t for t in tasks if t.status.is_active()]
             if len(tasks) == 0:
                 continue
-            job_ids = [t.job_id for t in tasks]
-            get_db().close()  # Close db since the following may take time
-            statuses = platform.get_statuses(job_ids)
-            get_db().connect()
-            for t in tasks:
-                t.status = statuses[t.job_id]
-                t.save()
+            platform.update_tasks(tasks)
+            Task.bulk_update(tasks, [Task.status, Task.hostname, Task.config])  # TODO update all fields!
 
     @staticmethod
     def create_tasks(platform: str, script_file: str, config_file: str, project: str = ''):

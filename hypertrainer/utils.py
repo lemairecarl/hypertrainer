@@ -81,5 +81,9 @@ class TaskStatus(Enum):
     Lost = 'Lost'
     Unknown = 'Unknown'
 
+    @property
+    def active_states(self):
+        return {TaskStatus.Waiting, TaskStatus.Running, TaskStatus.Unknown}
+
     def is_active(self):
-        return self in {TaskStatus.Waiting, TaskStatus.Running, TaskStatus.Unknown}
+        return self in self.active_states

@@ -156,7 +156,7 @@
                 {{ task.id }}
               </td>
               <td data-col="platform">{{ task.platform_type.value }}</td>
-              <td>{{ task.job_id }}</td>
+              <td>{{ task.hostname }} {{ task.job_id }}</td>
               <td>{{ task.name }}</td>
               <td data-col="status" class="{{ 'updating' if task.status.is_active() else task.status.value }}">
                 {{ task.status.value }}
