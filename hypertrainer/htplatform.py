@@ -78,9 +78,10 @@ class HtPlatform(ComputePlatform):
         HtPlatform._root_dir.mkdir(parents=True, exist_ok=True)
 
     def get_info_dict_for_each_worker(self):
-        results = [q.enqueue(get_jobs_info).result for q in self.worker_queues]
+        rqjobs = [q.enqueue(get_jobs_info) for q in self.worker_queues.values()]
 
         time.sleep(1)  # FIXME config
+        results = [j.result for j in rqjobs]
         if any(r is None for r in results):
             raise TimeoutError
 

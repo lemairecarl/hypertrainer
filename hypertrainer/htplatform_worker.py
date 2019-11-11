@@ -33,7 +33,7 @@ def run(
         config['training']['output_path'] = output_path  # FIXME does not generalize!
         yaml.dump(config, config_file)
     script_file_local = resolve_path(script_filename)
-    python_env_command = get_python_env_command(script_file_local, ComputePlatformType.CELERY.value)
+    python_env_command = get_python_env_command(script_file_local, ComputePlatformType.HT.value)
     print('Using env:', python_env_command)
     stdout_path = Path(job_path) / 'out.txt'  # FIXME this ignores task.stdout_path
     stderr_path = Path(job_path) / 'err.txt'
@@ -62,7 +62,7 @@ def run(
             else:
                 print('Crashed!')
                 update_job(job_id, {'status': 'Crashed'})
-            break  # End the celery task
+            break  # End the rq job
         sleep(monitor_interval)
 
 
