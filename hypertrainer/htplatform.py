@@ -1,20 +1,14 @@
 import os
-import subprocess
+import time
 from pathlib import Path
-from time import sleep
 from typing import List
-import pickle
 
-from celery import Celery, Task as CeleryTask, group as Group
+from redis import Redis
+from rq import Queue
 
 from hypertrainer.computeplatform import ComputePlatform
-from hypertrainer.computeplatformtype import ComputePlatformType
-from hypertrainer.localplatform import get_python_env_command
-from hypertrainer.task import Task
-from hypertrainer.utils import TaskStatus, resolve_path, setup_scripts_path, yaml
-
-app = Celery('hypertrainer.celeryplatform', backend='rpc://', broker='amqp://localhost:5672')
-local_db = Path.home() / 'hypertrainer' / 'db.pkl'
+from hypertrainer.utils import TaskStatus
+from hypertrainer.htplatform_worker import run, get_jobs_info
 
 
 class HtPlatform(ComputePlatform):
@@ -28,12 +22,15 @@ class HtPlatform(ComputePlatform):
     def __init__(self, worker_hostnames: List[str]):
         self.worker_hostnames = worker_hostnames
 
+        redis_conn = Redis(port=6380)  # FIXME config
+        self.jobs_queue = Queue(name='jobs', connection=redis_conn)
+        self.worker_queues = {h: Queue(name=h, connection=redis_conn) for h in self.worker_hostnames}
+
     def submit(self, task, resume=False):
-        async_result = run.s(task.id, task.script_file, task.dump_config(), task.output_path, resume).apply_async(
-                             queue='jobs')
-        job_id = async_result.id
-        # At this point, we only know the celery task id. No pid since the job might have to wait.
-        return job_id
+        job = self.jobs_queue.enqueue(run, job_timeout=-1, args=(
+            task.id, task.script_file, task.dump_config(), task.output_path, resume))
+        # At this point, we only know the rq job id. No pid since the job might have to wait.
+        return job.id
 
     def fetch_logs(self, task, keys=None):
         return {}
@@ -51,8 +48,7 @@ class HtPlatform(ComputePlatform):
             t.status = TaskStatus.Unknown
         job_id_to_task = {t.job_id: t for t in tasks}
 
-        info_dicts_g = Group([get_jobs_info.signature(queue=h) for h in self.worker_hostnames])
-        info_dicts = info_dicts_g.apply_async().get(timeout=5)  # TODO catch celery.exceptions.TimeoutError
+        info_dicts = self.get_info_dict_for_each_worker()  # TODO catch timeout
         for hostname, local_db in zip(self.worker_hostnames, info_dicts):
             for job_id in set(local_db.keys()).intersection(job_id_to_task.keys()):
                 job_info = local_db[job_id]
@@ -81,89 +77,11 @@ class HtPlatform(ComputePlatform):
             HtPlatform._root_dir = Path(p)
         HtPlatform._root_dir.mkdir(parents=True, exist_ok=True)
 
+    def get_info_dict_for_each_worker(self):
+        results = [q.enqueue(get_jobs_info).result for q in self.worker_queues]
 
-@app.task(bind=True)
-def run(_celery_task: CeleryTask,
-        task_id: int,
-        script_filename: str,
-        config_dump: str,
-        output_path: str,
-        resume: bool
-        ):
-    # Prepare the job
-    setup_scripts_path()  # FIXME do not run this each time
-    job_path = HtPlatform.get_root_dir() / str(task_id)  # Gets the job path on the worker
-    config_file = job_path / 'config.yaml'
-    if not resume:
-        # Setup task dir
-        job_path.mkdir(parents=True, exist_ok=False)
-        output_path = str(job_path)
-        config = yaml.load(config_dump)
-        config['training']['output_path'] = output_path  # FIXME does not generalize!
-        yaml.dump(config, config_file)
-    script_file_local = resolve_path(script_filename)
-    python_env_command = get_python_env_command(script_file_local, ComputePlatformType.CELERY.value)
-    print('Using env:', python_env_command)
-    stdout_path = Path(job_path) / 'out.txt'  # FIXME this ignores task.stdout_path
-    stderr_path = Path(job_path) / 'err.txt'
+        time.sleep(1)  # FIXME config
+        if any(r is None for r in results):
+            raise TimeoutError
 
-    # Start the subprocess
-    p = subprocess.Popen(python_env_command + [str(script_file_local), str(config_file)],
-                         stdout=stdout_path.open(mode='w'),
-                         stderr=stderr_path.open(mode='w'),
-                         cwd=output_path,
-                         universal_newlines=True)
-
-    # Write into to local db
-    job_id = _celery_task.request.id
-    update_job(job_id, {'output_path': output_path, 'pid': p.pid})
-
-    # Monitor the job
-    monitor_interval = 2  # TODO config
-    while True:
-        poll_result = p.poll()
-        if poll_result is None:
-            update_job(job_id, {'status': 'Running'})
-        else:
-            if p.returncode == 0:
-                print('Finished successfully')
-                update_job(job_id, {'status': 'Finished'})
-            else:
-                print('Crashed!')
-                update_job(job_id, {'status': 'Crashed'})
-            break  # End the celery task
-        sleep(monitor_interval)
-
-
-@app.task
-def get_jobs_info():
-    return get_db_contents()
-
-
-def check_init_db():
-    if not local_db.exists():
-        with local_db.open('wb') as f:
-            pickle.dump({}, f)
-
-
-def update_job(job_id: str, data: dict):
-    # TODO use a sqlite db
-    check_init_db()
-    with local_db.open('rb') as f:
-        db = pickle.load(f)
-    if job_id not in db:
-        db[job_id] = {}
-    db[job_id].update(data)
-    with local_db.open('wb') as f:
-        pickle.dump(db, f)
-
-
-def get_db_contents():
-    check_init_db()
-    with local_db.open('rb') as f:
-        db = pickle.load(f)
-    return db
-
-
-def strip_username_from_hostname(hostname):
-    return hostname.split('@')[1]
+        return results
