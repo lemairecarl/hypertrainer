@@ -18,7 +18,8 @@ if __name__ == '__main__':
     hostname = socket.gethostname()
     print('Hostname:', hostname)
 
-    with Connection(Redis(port=6380)):
+    redis_conn = Redis(port=6380)  # FIXME config
+    with Connection(redis_conn):
         specific_queue_worker = Process(target=work, args=(hostname,))
         jobs_queue_worker = Process(target=work, args=('jobs',))
 
