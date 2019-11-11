@@ -3,7 +3,7 @@ from typing import Iterable
 
 from ruamel.yaml import YAML
 
-from hypertrainer.celeryplatform import CeleryPlatform
+from hypertrainer.htplatform import HtPlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.localplatform import LocalPlatform
 from hypertrainer.slurmplatform import SlurmPlatform
@@ -23,7 +23,7 @@ class ExperimentManager:
         # Instantiate ComputePlatform's if available
         ExperimentManager.platform_instances = {
             ComputePlatformType.LOCAL: LocalPlatform(),
-            ComputePlatformType.CELERY: CeleryPlatform(['lemc2220-desktop'])  # FIXME config
+            ComputePlatformType.HT: HtPlatform(['lemc2220-desktop'])  # FIXME config
         }
         if 'GRAHAM' in os.environ:
             ExperimentManager.platform_instances[ComputePlatformType.GRAHAM] \

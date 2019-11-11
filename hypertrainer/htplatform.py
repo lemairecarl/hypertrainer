@@ -17,7 +17,12 @@ app = Celery('hypertrainer.celeryplatform', backend='rpc://', broker='amqp://loc
 local_db = Path.home() / 'hypertrainer' / 'db.pkl'
 
 
-class CeleryPlatform(ComputePlatform):
+class HtPlatform(ComputePlatform):
+    """The HT (HyperTrainer) Platform allows to send jobs to one or more Linux machines.
+
+    Each participating worker (can be several workers per machine) consumes jobs from a global queue.
+    """
+
     _root_dir: Path = None
 
     def __init__(self, worker_hostnames: List[str]):
@@ -59,9 +64,9 @@ class CeleryPlatform(ComputePlatform):
 
     @staticmethod
     def get_root_dir():
-        if CeleryPlatform._root_dir is None:
-            CeleryPlatform.setup_output_path()
-        return CeleryPlatform._root_dir
+        if HtPlatform._root_dir is None:
+            HtPlatform.setup_output_path()
+        return HtPlatform._root_dir
 
     @staticmethod
     def setup_output_path():
@@ -69,12 +74,12 @@ class CeleryPlatform(ComputePlatform):
         # Setup root output dir
         p = os.environ.get('HYPERTRAINER_OUTPUT')
         if p is None:
-            CeleryPlatform._root_dir = Path.home() / 'hypertrainer' / 'output'
+            HtPlatform._root_dir = Path.home() / 'hypertrainer' / 'output'
             print('Using root output dir: {}\nYou can configure this with $HYPERTRAINER_OUTPUT.'
-                  .format(CeleryPlatform._root_dir))
+                  .format(HtPlatform._root_dir))
         else:
-            CeleryPlatform._root_dir = Path(p)
-        CeleryPlatform._root_dir.mkdir(parents=True, exist_ok=True)
+            HtPlatform._root_dir = Path(p)
+        HtPlatform._root_dir.mkdir(parents=True, exist_ok=True)
 
 
 @app.task(bind=True)
@@ -87,7 +92,7 @@ def run(_celery_task: CeleryTask,
         ):
     # Prepare the job
     setup_scripts_path()  # FIXME do not run this each time
-    job_path = CeleryPlatform.get_root_dir() / str(task_id)  # Gets the job path on the worker
+    job_path = HtPlatform.get_root_dir() / str(task_id)  # Gets the job path on the worker
     config_file = job_path / 'config.yaml'
     if not resume:
         # Setup task dir
