@@ -23,7 +23,7 @@ def run(
         ):
     # Prepare the job
     setup_scripts_path()  # FIXME do not run this each time
-    job_path = ht_output_path / str(task_id)  # Gets the job path on the worker
+    job_path = _get_job_path(task_id)  # Gets the job path on the worker
     config_file = job_path / 'config.yaml'
     if not resume:
         # Setup task dir
@@ -47,38 +47,53 @@ def run(
 
     # Write into to local db
     job_id = get_current_job().id
-    update_job(job_id, {'output_path': output_path, 'pid': p.pid})
+    _update_job(job_id, {'output_path': output_path, 'pid': p.pid})
 
     # Monitor the job
     monitor_interval = 2  # TODO config
     while True:
         poll_result = p.poll()
         if poll_result is None:
-            update_job(job_id, {'status': 'Running'})
+            _update_job(job_id, {'status': 'Running'})
         else:
             if p.returncode == 0:
                 print('Finished successfully')
-                update_job(job_id, {'status': 'Finished'})
+                _update_job(job_id, {'status': 'Finished'})
             else:
                 print('Crashed!')
-                update_job(job_id, {'status': 'Crashed'})
+                _update_job(job_id, {'status': 'Crashed'})
             break  # End the rq job
         sleep(monitor_interval)
 
 
+def get_logs(task_id):
+    job_path = _get_job_path(task_id)
+    logs = {}
+    patterns = ('*.log', '*.txt')
+    for pattern in patterns:
+        for f in job_path.glob(pattern):
+            p = Path(f)
+            logs[p.stem] = p.read_text()
+    return logs
+
+
+def _get_job_path(task_id):
+    return ht_output_path / str(task_id)
+
+
 def get_jobs_info():
-    return get_db_contents()
+    return _get_db_contents()
 
 
-def check_init_db():
+def _check_init_db():
     if not local_db.exists():
         with local_db.open('wb') as f:
             pickle.dump({}, f)
 
 
-def update_job(job_id: str, data: dict):
+def _update_job(job_id: str, data: dict):
     # TODO use a sqlite db
-    check_init_db()
+    _check_init_db()
     with local_db.open('rb') as f:
         db = pickle.load(f)
     if job_id not in db:
@@ -88,8 +103,8 @@ def update_job(job_id: str, data: dict):
         pickle.dump(db, f)
 
 
-def get_db_contents():
-    check_init_db()
+def _get_db_contents():
+    _check_init_db()
     with local_db.open('rb') as f:
         db = pickle.load(f)
     return db

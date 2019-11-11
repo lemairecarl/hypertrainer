@@ -8,7 +8,7 @@ from rq import Queue
 
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.utils import TaskStatus
-from hypertrainer.htplatform_worker import run, get_jobs_info
+from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs
 
 
 class HtPlatform(ComputePlatform):
@@ -33,7 +33,13 @@ class HtPlatform(ComputePlatform):
         return job.id
 
     def fetch_logs(self, task, keys=None):
-        return {}
+        rqjob = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.id,), result_ttl=30)
+
+        time.sleep(2)
+        if rqjob.result is None:
+            raise TimeoutError
+
+        return rqjob.result
 
     def cancel(self, task):
         pass
