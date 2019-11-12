@@ -34,7 +34,7 @@ class HtPlatform(ComputePlatform):
         return job.id
 
     def fetch_logs(self, task, keys=None):
-        rq_job = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.id,), result_ttl=4)
+        rq_job = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.id,), ttl=1, result_ttl=2)
         logs = wait_for_result(rq_job, timeout=2)
         return logs
 
@@ -81,7 +81,7 @@ class HtPlatform(ComputePlatform):
         HtPlatform._root_dir.mkdir(parents=True, exist_ok=True)
 
     def get_info_dict_for_each_worker(self):
-        rq_jobs = [q.enqueue(get_jobs_info, result_ttl=2) for q in self.worker_queues.values()]
+        rq_jobs = [q.enqueue(get_jobs_info, ttl=1, result_ttl=1) for q in self.worker_queues.values()]
         results = wait_for_results(rq_jobs, wait_secs=1)
         return results
 
