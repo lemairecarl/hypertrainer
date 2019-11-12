@@ -66,7 +66,7 @@ class ExperimentManager:
             if len(tasks) == 0:
                 continue
             platform.update_tasks(tasks)
-            Task.bulk_update(tasks, [Task.status, Task.hostname, Task.config])  # TODO update all fields!
+            Task.bulk_update(tasks, Task.get_fields())  # FIXME updating all records everytime is heavy
 
     @staticmethod
     def create_tasks(platform: str, script_file: str, config_file: str, project: str = ''):

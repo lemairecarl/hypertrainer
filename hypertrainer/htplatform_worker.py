@@ -50,7 +50,7 @@ def run(
     _update_job(job_id, {'output_path': output_path, 'pid': p.pid})
 
     # Monitor the job
-    monitor_interval = 2  # TODO config
+    monitor_interval = 2  # TODO config?
     while True:
         poll_result = p.poll()
         if poll_result is None:
@@ -92,7 +92,6 @@ def _check_init_db():
 
 
 def _update_job(job_id: str, data: dict):
-    # TODO use a sqlite db
     _check_init_db()
     with local_db.open('rb') as f:
         db = pickle.load(f)

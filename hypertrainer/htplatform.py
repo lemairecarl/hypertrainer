@@ -18,8 +18,6 @@ class HtPlatform(ComputePlatform):
     Each participating worker consumes jobs from a global queue. There can be several workers per machine.
     """
 
-    _root_dir: Path = None
-
     def __init__(self, worker_hostnames: List[str]):
         self.worker_hostnames = worker_hostnames
 
@@ -42,16 +40,13 @@ class HtPlatform(ComputePlatform):
         pass
 
     def update_tasks(self, tasks):
-        # TODO do not modify database here!!!
         # TODO only check requested ids
-        # TODO handle continue on different host
-        # TODO check for pending jobs -- need a result backend for this (e.g. redis)
 
         for t in tasks:
             t.status = TaskStatus.Unknown
         job_id_to_task = {t.job_id: t for t in tasks}
 
-        info_dicts = self.get_info_dict_for_each_worker()  # TODO catch timeout
+        info_dicts = self._get_info_dict_for_each_worker()
         for hostname, local_db in zip(self.worker_hostnames, info_dicts):
             for job_id in set(local_db.keys()).intersection(job_id_to_task.keys()):
                 job_info = local_db[job_id]
@@ -61,26 +56,7 @@ class HtPlatform(ComputePlatform):
                 t.output_path = job_info['output_path']
                 t.hostname = hostname
 
-    @staticmethod
-    def get_root_dir():
-        if HtPlatform._root_dir is None:
-            HtPlatform.setup_output_path()
-        return HtPlatform._root_dir
-
-    @staticmethod
-    def setup_output_path():
-        # FIXME cannot store in memory
-        # Setup root output dir
-        p = os.environ.get('HYPERTRAINER_OUTPUT')
-        if p is None:
-            HtPlatform._root_dir = Path.home() / 'hypertrainer' / 'output'
-            print('Using root output dir: {}\nYou can configure this with $HYPERTRAINER_OUTPUT.'
-                  .format(HtPlatform._root_dir))
-        else:
-            HtPlatform._root_dir = Path(p)
-        HtPlatform._root_dir.mkdir(parents=True, exist_ok=True)
-
-    def get_info_dict_for_each_worker(self):
+    def _get_info_dict_for_each_worker(self):
         rq_jobs = [q.enqueue(get_jobs_info, ttl=1, result_ttl=1) for q in self.worker_queues.values()]
         results = wait_for_results(rq_jobs, wait_secs=1)
         return results
