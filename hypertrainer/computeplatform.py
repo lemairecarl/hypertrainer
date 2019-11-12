@@ -24,7 +24,19 @@ class ComputePlatform(ABC):
 
     @abstractmethod
     def cancel(self, task):
-        """Cancel a task."""
+        """Cancel a task.
+
+        Returns nothing.
+        """
         pass
 
-    #TODO update_tasks
+    @abstractmethod
+    def update_tasks(self, tasks):
+        """Request the platform to update the specified tasks.
+
+        The main purpose of this method is to update the tasks' status. However, other fields of the tasks may
+        also be updated.
+
+        Returns nothing.
+        """
+        pass

@@ -64,22 +64,20 @@ class LocalPlatform(ComputePlatform):
         task.status = TaskStatus.Cancelled
         task.save()
 
-    def get_statuses(self, job_ids) -> dict:
-        statuses = {}
-        for job_id in job_ids:
-            p = self.processes.get(job_id)
+    def update_tasks(self, tasks):
+        for t in tasks:
+            p = self.processes.get(t.job_id)
             if p is None:
-                statuses[job_id] = TaskStatus.Lost
+                t.status = TaskStatus.Lost
                 continue
             poll_result = p.poll()
             if poll_result is None:
-                statuses[job_id] = TaskStatus.Running
+                t.status = TaskStatus.Running
             else:
                 if p.returncode == 0:
-                    statuses[job_id] = TaskStatus.Finished
+                    t.status = TaskStatus.Finished
                 else:
-                    statuses[job_id] = TaskStatus.Crashed
-        return statuses
+                    t.status = TaskStatus.Crashed
 
     def _make_job_path(self, task):
         return self.root_dir / str(task.id)

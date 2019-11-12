@@ -57,22 +57,22 @@ class SlurmPlatform(ComputePlatform):
                 logs[p.stem] = p.read_text()
         return logs
 
-    def get_statuses(self, job_ids):
+    def update_tasks(self, tasks):
+        job_ids = [t.job_id for t in tasks]
         statuses = self._get_statuses(job_ids)  # Get statuses of active jobs
         ccodes = self._get_completion_codes()  # Get statuses for completed jobs
 
-        for job_id in job_ids:
-            if job_id in ccodes:
+        for t in tasks:
+            if t.job_id in ccodes:
                 # Job just completed
-                if ccodes[job_id] == 0:
-                    statuses[job_id] = TaskStatus.Finished
+                if ccodes[t.job_id] == 0:
+                    t.status = TaskStatus.Finished
                 else:
-                    statuses[job_id] = TaskStatus.Crashed
+                    t.status = TaskStatus.Crashed
             else:
                 # Job still active (or lost)
-                if job_id not in statuses:
-                    statuses[job_id] = TaskStatus.Lost  # Job not found
-        return statuses
+                if t.job_id not in statuses:
+                    t.status = TaskStatus.Lost  # Job not found
 
     def _get_statuses(self, job_ids):
         data = subprocess.run(['ssh', self.server_user, 'squeue -u $USER | grep $USER'],
