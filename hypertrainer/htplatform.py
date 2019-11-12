@@ -1,10 +1,11 @@
 import os
 import time
 from pathlib import Path
-from typing import List
+from typing import List, Iterable
 
 from redis import Redis
 from rq import Queue
+from rq.job import Job
 
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.utils import TaskStatus
@@ -14,7 +15,7 @@ from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs
 class HtPlatform(ComputePlatform):
     """The HT (HyperTrainer) Platform allows to send jobs to one or more Linux machines.
 
-    Each participating worker (can be several workers per machine) consumes jobs from a global queue.
+    Each participating worker consumes jobs from a global queue. There can be several workers per machine.
     """
 
     _root_dir: Path = None
@@ -33,13 +34,9 @@ class HtPlatform(ComputePlatform):
         return job.id
 
     def fetch_logs(self, task, keys=None):
-        rqjob = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.id,), result_ttl=30)
-
-        time.sleep(2)
-        if rqjob.result is None:
-            raise TimeoutError
-
-        return rqjob.result
+        rq_job = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.id,), result_ttl=4)
+        logs = wait_for_result(rq_job, timeout=2)
+        return logs
 
     def cancel(self, task):
         pass
@@ -84,11 +81,21 @@ class HtPlatform(ComputePlatform):
         HtPlatform._root_dir.mkdir(parents=True, exist_ok=True)
 
     def get_info_dict_for_each_worker(self):
-        rqjobs = [q.enqueue(get_jobs_info, result_ttl=30) for q in self.worker_queues.values()]
-
-        time.sleep(1)  # FIXME config
-        results = [j.result for j in rqjobs]
-        if any(r is None for r in results):
-            raise TimeoutError
-
+        rq_jobs = [q.enqueue(get_jobs_info, result_ttl=2) for q in self.worker_queues.values()]
+        results = wait_for_results(rq_jobs, wait_secs=1)
         return results
+
+
+def wait_for_result(rq_job: Job, timeout):
+    time.sleep(timeout)
+    if rq_job.result is None:
+        raise TimeoutError
+    return rq_job.result
+
+
+def wait_for_results(rq_jobs: Iterable[Job], wait_secs):
+    time.sleep(wait_secs)
+    results = [j.result for j in rq_jobs]
+    if any(r is None for r in results):
+        raise TimeoutError
+    return results
