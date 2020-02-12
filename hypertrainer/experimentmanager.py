@@ -1,15 +1,16 @@
 import os
+import shutil
 from typing import Iterable, Optional
 
 from ruamel.yaml import YAML
 
-from hypertrainer.htplatform import HtPlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
+from hypertrainer.hpsearch import generate as generate_hpsearch
+from hypertrainer.htplatform import HtPlatform
 from hypertrainer.localplatform import LocalPlatform
 from hypertrainer.slurmplatform import SlurmPlatform
 from hypertrainer.task import Task
-from hypertrainer.hpsearch import generate as generate_hpsearch
-from hypertrainer.utils import resolve_path, TaskStatus
+from hypertrainer.utils import resolve_path
 
 yaml = YAML()
 
@@ -41,7 +42,7 @@ class ExperimentManager:
         if platform is None:
             q = Task.select().where(Task.is_archived == archived)
         else:
-            q = Task.select().where(Task.platform_type == platform & Task.is_archived == archived)
+            q = Task.select().where((Task.platform_type == platform) & (Task.is_archived == archived))
 
         if proj is not None:
             q = q.where(Task.project == proj)
@@ -123,6 +124,12 @@ class ExperimentManager:
 
     @staticmethod
     def delete_tasks_by_id(task_ids: list):
+        if Task.select().where(Task.id.in_(task_ids) & (Task.is_archived == False)).count() > 0:
+            raise RuntimeError('Only archived tasks can be deleted')
+        for t in Task.select().where(Task.id.in_(task_ids)):
+            print('Deleting', t.output_path)
+            shutil.rmtree(t.output_path,
+                          onerror=lambda function, path, excinfo: print('ERROR', function, path, excinfo))
         Task.delete().where(Task.id.in_(task_ids)).execute()
 
     @staticmethod
