@@ -1,5 +1,5 @@
 import os
-from typing import Iterable
+from typing import Iterable, Optional
 
 from ruamel.yaml import YAML
 
@@ -33,25 +33,21 @@ class ExperimentManager:
                 = SlurmPlatform(server_user=os.environ['BELUGA'])
 
     @staticmethod
-    def get_all_tasks(do_update=False, proj=None):
-        if do_update:
-            ExperimentManager.update_tasks()
-        # NOTE: statuses are requested asynchronously by the dashboard
-        q = Task.select()
-        if proj is not None:
-            q = q.where(Task.project == proj)
-        q = q.order_by(Task.id.desc())
-        all_tasks = list(q)
-        return all_tasks
+    def get_tasks(platform: Optional[ComputePlatformType] = None, proj: Optional[str] = None, archived=False):
+        # TODO rename this function? Maybe get_filtered_tasks?
+        p_list = [platform] if platform is not None else None
+        ExperimentManager.update_tasks(platforms=p_list)  # TODO return tasks to avoid other db query?
 
-    @staticmethod
-    def get_tasks(platform: ComputePlatformType, proj=None):
-        ExperimentManager.update_tasks(platforms=[platform])  # TODO return tasks to avoid other db query?
-        q = Task.select().where(Task.platform_type == platform)
+        if platform is None:
+            q = Task.select().where(Task.is_archived == archived)
+        else:
+            q = Task.select().where(Task.platform_type == platform & Task.is_archived == archived)
+
         if proj is not None:
             q = q.where(Task.project == proj)
         q = q.order_by(Task.id.desc())
         tasks = list(q)
+
         for t in tasks:
             ExperimentManager.monitor(t)
         return tasks
@@ -90,6 +86,7 @@ class ExperimentManager:
         # Submit tasks
         for t in tasks:
             ExperimentManager.submit_task(t)  # TODO submit in batch to server!
+        return tasks
 
     @staticmethod
     def submit_task(task: Task):
@@ -119,6 +116,10 @@ class ExperimentManager:
         # TODO rename this method 'update' or something?
         t.logs = ExperimentManager.get_platform(t).fetch_logs(t)
         t.interpret_logs()
+
+    @staticmethod
+    def archive_tasks_by_id(task_ids: list):
+        Task.update(is_archived=True).where(Task.id.in_(task_ids)).execute()
 
     @staticmethod
     def delete_tasks_by_id(task_ids: list):

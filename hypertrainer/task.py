@@ -3,7 +3,7 @@ from time import time
 
 import numpy as np
 import pandas as pd
-from peewee import CharField, IntegerField, FloatField, Field
+from peewee import CharField, IntegerField, FloatField, Field, BooleanField
 
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.db import BaseModel, EnumField, YamlField, get_db
@@ -23,6 +23,7 @@ class Task(BaseModel):
     cur_iter = IntegerField(default=0)
     iter_per_epoch = IntegerField(default=0)
     epoch_duration = FloatField(default=0)
+    is_archived = BooleanField(default=False)
 
     _fields = None
 

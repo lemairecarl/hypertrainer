@@ -39,7 +39,7 @@ def index():
     else:
         flash('ERROR: Unrecognized action!', 'error')
     return render_template('index.html',
-                           tasks=em.get_all_tasks(proj=session.get('project')),
+                           tasks=em.get_tasks(proj=session.get('project')),
                            platforms=em.list_platforms(as_str=True), projects=em.list_projects(),
                            cur_proj=session.get('project'))
 

@@ -1,6 +1,7 @@
 from time import sleep
 from pathlib import Path
 
+import pytest
 from ruamel.yaml import YAML
 
 
@@ -11,7 +12,7 @@ def test_empty_db(client):
     assert b'No tasks to show' in rv.data
 
 
-def test_submit(client):
+def test_submit_local(client):
     # Note: client has to be passed to this test to setup the flask app correctly
 
     # Need to be in a flask app context before importing those:
@@ -26,7 +27,7 @@ def test_submit(client):
 
     # 2. Wait for it to finish, then get tasks
     sleep(2)
-    tasks = experiment_manager.get_all_tasks(do_update=True)
+    tasks = experiment_manager.get_tasks()
     assert len(tasks) == 3
 
     # 3. Check stuff on each task
@@ -64,7 +65,7 @@ def test_submit(client):
         assert -2 <= p_lin <= 2
 
 
-def test_resume(client):
+def test_resume_local(client):
     # Note: client has to be passed to this test to setup the flask app correctly
 
     # Need to be in a flask app context before importing those:
@@ -75,7 +76,7 @@ def test_resume(client):
     experiment_manager.create_tasks(script_file='script_test_resume.py', config_file='test_resume.yaml', platform='local')
     sleep(1)
 
-    tasks = experiment_manager.get_all_tasks(do_update=True)
+    tasks = experiment_manager.get_tasks()
     assert len(tasks) == 1
     t = tasks[0]  # type: Task
     assert t.status == TaskStatus.Finished
@@ -83,12 +84,32 @@ def test_resume(client):
     experiment_manager.resume_tasks([t])
     sleep(1)
 
-    tasks = experiment_manager.get_all_tasks(do_update=True)
+    tasks = experiment_manager.get_tasks()
     assert len(tasks) == 1
     t = tasks[0]  # type: Task
     assert t.status == TaskStatus.Finished
     # Check that there is exactly two X; one for initial submission, one for resume
     assert (Path(t.output_path) / 'i_was_here.txt').read_text().strip() == 'XX'
+
+
+@pytest.mark.xfail
+def test_submit_rq(client):
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_resume_rq(client):
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_archive(client):
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_delete(client):
+    raise NotImplementedError
 
 
 def deep_assert_equal(a, b, exclude_keys):
