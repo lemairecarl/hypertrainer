@@ -32,6 +32,8 @@ class HtPlatform(ComputePlatform):
         return job.id
 
     def fetch_logs(self, task, keys=None):
+        if task.hostname == '':  # The job hasn't been consumed yet
+            return {}
         rq_job = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.id,), ttl=1, result_ttl=2)
         logs = wait_for_result(rq_job, timeout=2)
         return logs

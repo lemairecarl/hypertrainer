@@ -138,6 +138,7 @@
             ID
           </th>
           <th>Platform</th>
+          <th>Host</th>
           <th>PID</th>
           <th>Name</th>
           <th>Status</th>
@@ -156,7 +157,8 @@
                 {{ task.id }}
               </td>
               <td data-col="platform">{{ task.platform_type.value }}</td>
-              <td>{{ task.hostname }} {{ task.job_id }}</td>
+              <td>{{ task.hostname }}</td>
+              <td>{{ task.job_id }}</td>
               <td>{{ task.name }}</td>
               <td data-col="status" class="{{ 'updating' if task.status.is_active() else task.status.value }}">
                 {{ task.status.value }}
@@ -172,6 +174,7 @@
         {% else %}
           <tr>
             <td>No tasks to show.</td>
+            <td></td>
             <td></td>
             <td></td>
             <td></td>
