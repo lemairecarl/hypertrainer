@@ -9,7 +9,7 @@ from rq.job import Job
 
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.utils import TaskStatus
-from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs
+from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job
 
 
 class HtPlatform(ComputePlatform):
@@ -75,3 +75,18 @@ def wait_for_results(rq_jobs: Iterable[Job], wait_secs):
     if any(r is None for r in results):
         raise TimeoutError
     return results
+
+
+if __name__ == '__main__':
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('mode', choices=['test'])
+    ap.add_argument('--queue', type=str, default='jobs')
+    ap.add_argument('--msg', type=str, default='ping!')
+    args = ap.parse_args()
+
+    assert args.mode == 'test'
+
+    redis_conn = Redis(port=6380)  # FIXME config
+    queue = Queue(name=args.queue, connection=redis_conn)
+    job = queue.enqueue(test_job, args=(args.msg,))

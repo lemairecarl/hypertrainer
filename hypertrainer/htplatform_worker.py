@@ -107,3 +107,8 @@ def _get_db_contents():
     with local_db.open('rb') as f:
         db = pickle.load(f)
     return db
+
+
+def test_job(msg: str):
+    """Prints a message. For testing purposes."""
+    print(msg)
