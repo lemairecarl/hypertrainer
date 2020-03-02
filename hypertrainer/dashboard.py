@@ -27,6 +27,8 @@ def index():
         if a == 'Cancel':
             em.cancel_tasks(em.get_tasks_by_id(task_ids))
             flash('Cancelled task(s) {}.'.format(', '.join(task_ids)))
+        elif a == 'Archive':
+            em.archive_tasks_by_id(task_ids)
         elif a == 'Delete':
             em.delete_tasks_by_id(task_ids)
         elif a == 'Resume':

@@ -23,9 +23,11 @@ class ExperimentManager:
         # TODO initialize from config yaml instead of env vars
         # Instantiate ComputePlatform's if available
         ExperimentManager.platform_instances = {
-            ComputePlatformType.LOCAL: LocalPlatform(),
-            ComputePlatformType.HT: HtPlatform(['lemc2220-desktop'])  # FIXME config
+            ComputePlatformType.LOCAL: LocalPlatform()
         }
+        if 'HTPLATFORM_WORKERS' in os.environ:
+            ExperimentManager.platform_instances[ComputePlatformType.HT] \
+                = HtPlatform(os.environ['HTPLATFORM_WORKERS'].split(','))
         if 'GRAHAM' in os.environ:
             ExperimentManager.platform_instances[ComputePlatformType.GRAHAM] \
                 = SlurmPlatform(server_user=os.environ['GRAHAM'])
