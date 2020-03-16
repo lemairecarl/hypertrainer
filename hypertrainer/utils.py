@@ -71,6 +71,26 @@ def join_dicts(dicts: Iterable[dict]):
     return dict(chain(*[list(x.items()) for x in dicts]))
 
 
+def deep_assert_equal(a, b, exclude_keys):
+    """For asserting partial equality between yaml config objects"""
+
+    if isinstance(a, dict):
+        keys = set(a.keys()).union(set(b.keys()))
+        for k in keys:
+            if k in exclude_keys:
+                continue
+            else:
+                assert k in a
+                assert k in b
+            deep_assert_equal(a[k], b[k], exclude_keys)
+    elif isinstance(a, list):
+        assert len(a) == len(b)
+        for i in range(len(a)):
+            deep_assert_equal(a[i], b[i], exclude_keys)
+    else:
+        assert a == b
+
+
 class TaskStatus(Enum):
     Waiting = 'Waiting'
     Running = 'Running'
