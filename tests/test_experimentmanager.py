@@ -10,6 +10,7 @@ from hypertrainer.htplatform import HtPlatform
 from hypertrainer.task import Task
 from hypertrainer.utils import TaskStatus, yaml
 from hypertrainer.utils import deep_assert_equal
+from worker import WorkerContext
 
 SCRIPTS_PATH = '/home/carl/source/hypertrainer/tests/scripts'  # FIXME
 
@@ -148,28 +149,28 @@ def test_delete_local_task():
 
 
 def test_submit_rq_task():
-    #with WorkerContext(redis_port=6380, hostname='localhost'):
-    ht_platform = HtPlatform(['localhost'])
-    experiment_manager.platform_instances[ComputePlatformType.HT] = ht_platform  #FIXME
-    try:
-        answers = ht_platform.ping_workers()
-    except TimeoutError:
-        raise AssertionError('The ping timed out. A worker must listen queue \'localhost\'')
-    assert answers == ['localhost']
+    with WorkerContext(hostname='localhost'):
 
-    # 1. Submit rq task
-    tasks = experiment_manager.create_tasks(
-        config_file=SCRIPTS_PATH + '/test_submit.yaml',
-        platform='htPlatform')
-    task_id = tasks[0].id
+        ht_platform = HtPlatform(['localhost'])
+        experiment_manager.platform_instances[ComputePlatformType.HT] = ht_platform  #FIXME
+        try:
+            answers = ht_platform.ping_workers()
+        except TimeoutError:
+            raise AssertionError('The ping timed out. A worker must listen queue \'localhost\'')
+        assert answers == ['localhost']
 
-    # 2. Check that the task finishes successfully
-    def check_finished():
-        experiment_manager.update_tasks()
-        status = Task.get(Task.id == task_id).status
-        return status == TaskStatus.Finished
-    wait_true(check_finished, interval_secs=2)
+        # 1. Submit rq task
+        tasks = experiment_manager.create_tasks(
+            config_file=SCRIPTS_PATH + '/test_submit.yaml',
+            platform='htPlatform')
+        task_id = tasks[0].id
 
+        # 2. Check that the task finishes successfully
+        def check_finished():
+            experiment_manager.update_tasks()
+            status = Task.get(Task.id == task_id).status
+            return status == TaskStatus.Finished
+        wait_true(check_finished, interval_secs=2)
 
 # @pytest.mark.xfail
 # def test_delete_rq_task(client):
