@@ -2,11 +2,15 @@ import io
 from enum import Enum
 from functools import reduce
 from itertools import chain
+from pathlib import Path
 from typing import Iterable
 
 from ruamel.yaml import YAML
 
 yaml = YAML()
+
+
+hypertrainer_home = Path.home() / 'hypertrainer'
 
 
 def get_item_at_path(obj, path, sep='.', default=KeyError):

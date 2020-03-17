@@ -6,7 +6,7 @@ import pandas as pd
 from peewee import CharField, IntegerField, FloatField, Field, BooleanField, UUIDField
 
 from hypertrainer.computeplatformtype import ComputePlatformType
-from hypertrainer.db import BaseModel, EnumField, YamlField, get_db
+from hypertrainer.db import BaseModel, EnumField, YamlField
 from hypertrainer.utils import TaskStatus, set_item_at_path, get_item_at_path, yaml_to_str, parse_columns
 
 

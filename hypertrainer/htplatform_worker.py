@@ -7,10 +7,9 @@ from rq import get_current_job
 
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.localplatform import get_python_env_command
-from hypertrainer.utils import yaml
+from hypertrainer.utils import yaml, hypertrainer_home
 
-ht_root = Path.home() / 'hypertrainer'  # FIXME config
-local_db = ht_root / 'db.pkl'  # FIXME config
+local_db = hypertrainer_home / 'db.pkl'  # FIXME config
 
 
 def run(
