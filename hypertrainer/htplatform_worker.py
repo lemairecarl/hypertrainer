@@ -75,6 +75,10 @@ def get_logs(task_id):
     return logs
 
 
+def ping(msg):
+    return msg
+
+
 def get_jobs_info():
     return _get_db_contents()
 

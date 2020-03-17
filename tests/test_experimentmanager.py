@@ -149,7 +149,13 @@ def test_delete_local_task():
 
 def test_submit_rq_task():
     #with WorkerContext(redis_port=6380, hostname='localhost'):
-    experiment_manager.platform_instances[ComputePlatformType.HT] = HtPlatform(['carl-laptop'])  #FIXME
+    ht_platform = HtPlatform(['localhost'])
+    experiment_manager.platform_instances[ComputePlatformType.HT] = ht_platform  #FIXME
+    try:
+        answers = ht_platform.ping_workers()
+    except TimeoutError:
+        raise AssertionError('The ping timed out. A worker must listen queue \'localhost\'')
+    assert answers == ['localhost']
 
     # 1. Submit rq task
     tasks = experiment_manager.create_tasks(

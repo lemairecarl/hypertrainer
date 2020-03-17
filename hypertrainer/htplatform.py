@@ -8,7 +8,7 @@ from rq.job import Job
 
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.utils import TaskStatus
-from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job
+from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping
 
 
 class HtPlatform(ComputePlatform):
@@ -67,6 +67,11 @@ class HtPlatform(ComputePlatform):
 
     def _get_info_dict_for_each_worker(self):
         rq_jobs = [q.enqueue(get_jobs_info, ttl=2, result_ttl=2) for q in self.worker_queues.values()]
+        results = wait_for_results(rq_jobs, wait_secs=1)
+        return results
+
+    def ping_workers(self):
+        rq_jobs = [q.enqueue(ping, ttl=2, result_ttl=2, args=(h,)) for h, q in self.worker_queues.items()]
         results = wait_for_results(rq_jobs, wait_secs=1)
         return results
 
