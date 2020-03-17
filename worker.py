@@ -2,9 +2,7 @@
 import argparse
 import socket
 from multiprocessing import Process
-from pathlib import Path
 from typing import Optional, Tuple
-import logging
 
 from redis import Redis
 from rq import Connection, Worker
@@ -15,14 +13,8 @@ from rq.worker import StopRequested
 # TODO import library_that_you_want_preloaded
 
 
-logfile = Path.home() / 'hypertrainer' / 'worker_log.txt'
-
-
 class WorkerContext:
     def __init__(self, hostname):
-        logfile.parent.mkdir(exist_ok=True)
-        logging.basicConfig(filename=str(logfile), level=logging.INFO)
-
         self.hostname = hostname if hostname is not None else socket.gethostname()
         redis_port = 6380  # FIXME config
         self.redis_conn = Redis(port=redis_port)

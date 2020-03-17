@@ -10,7 +10,6 @@ from hypertrainer.htplatform import HtPlatform
 from hypertrainer.task import Task
 from hypertrainer.utils import TaskStatus, yaml
 from hypertrainer.utils import deep_assert_equal
-from worker import logfile as worker_logfile
 
 SCRIPTS_PATH = '/home/carl/source/hypertrainer/tests/scripts'  # FIXME
 
@@ -182,23 +181,6 @@ def test_submit_rq_task():
 #     # 5. Check that task does not exist in DB
 #     # 6. Check that files on disk have been deleted
 #     raise NotImplementedError
-
-def test_rq_raise_exception():
-    ht_platform = HtPlatform(['localhost'])
-    experiment_manager.platform_instances[ComputePlatformType.HT] = ht_platform  # FIXME
-
-    if worker_logfile.exists():
-        num_char_to_ignore = len(worker_logfile.read_text())
-    else:
-        num_char_to_ignore = 0
-
-    exc_type = RuntimeError
-    ht_platform.raise_exception_in_worker(exc_type, 'localhost')
-
-    sleep(1)
-    assert worker_logfile.exists()
-    new_log_content = worker_logfile.read_text()[num_char_to_ignore:]
-    assert exc_type.__class__.__name__ in new_log_content
 
 
 def wait_true(fn, interval_secs=1, tries=4):
