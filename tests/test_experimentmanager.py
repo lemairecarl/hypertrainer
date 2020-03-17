@@ -3,8 +3,10 @@ from time import sleep
 
 import pytest
 
+from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.db import init_db
 from hypertrainer.experimentmanager import experiment_manager
+from hypertrainer.htplatform import HtPlatform
 from hypertrainer.task import Task
 from hypertrainer.utils import TaskStatus, yaml
 from hypertrainer.utils import deep_assert_equal
@@ -145,33 +147,22 @@ def test_delete_local_task():
     wait_true(lambda: not task_folder.exists())
 
 
-# def test_submit_rq_task(client):
-#     from hypertrainer.experimentmanager import experiment_manager
-#     from hypertrainer.task import Task
-#     from worker import WorkerContext
-#
-#     with WorkerContext(redis_port=6380, hostname='localhost', env_vars={
-#         'HYPERTRAINER_ROOT': os.environ['HYPERTRAINER_ROOT'],
-#         'HYPERTRAINER_OUTPUT': os.environ['HYPERTRAINER_OUTPUT'],
-#         'HYPERTRAINER_PATH': os.environ['HYPERTRAINER_PATH']
-#     }):
-#         experiment_manager.platform_instances[ComputePlatformType.HT] = HtPlatform(['localhost'])  #FIXME
-#
-#         # 1. Submit rq task
-#         tasks = experiment_manager.create_tasks(script_file='script_test_submit.py', config_file='test_submit.yaml',
-#                                                 platform='htPlatform')
-#         task_id = tasks[0].id
-#
-#         # 2. Check that the task finishes successfully
-#         def check_finished():
-#             try:
-#                 experiment_manager.update_tasks()
-#             except JobLostError:
-#                 print('Some jobs were lost!')
-#             status = Task.get(Task.id == task_id).status
-#             print('Status:', status)
-#             return status == TaskStatus.Finished
-#         wait_true(check_finished, interval_secs=2)
+def test_submit_rq_task():
+    #with WorkerContext(redis_port=6380, hostname='localhost'):
+    experiment_manager.platform_instances[ComputePlatformType.HT] = HtPlatform(['carl-laptop'])  #FIXME
+
+    # 1. Submit rq task
+    tasks = experiment_manager.create_tasks(
+        config_file=SCRIPTS_PATH + '/test_submit.yaml',
+        platform='htPlatform')
+    task_id = tasks[0].id
+
+    # 2. Check that the task finishes successfully
+    def check_finished():
+        experiment_manager.update_tasks()
+        status = Task.get(Task.id == task_id).status
+        return status == TaskStatus.Finished
+    wait_true(check_finished, interval_secs=2)
 
 
 # @pytest.mark.xfail

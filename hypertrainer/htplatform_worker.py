@@ -1,7 +1,7 @@
+import pickle
 import subprocess
 from pathlib import Path
 from time import sleep
-import pickle
 
 from rq import get_current_job
 
@@ -10,43 +10,40 @@ from hypertrainer.localplatform import get_python_env_command
 from hypertrainer.utils import yaml
 
 ht_root = Path.home() / 'hypertrainer'  # FIXME config
-ht_output_path = ht_root / 'output'
 local_db = ht_root / 'db.pkl'  # FIXME config
 
 
 def run(
-        task_id: int,
-        script_filename: str,
+        task_uuid: str,
+        script_file: Path,
         config_dump: str,
-        output_path: str,
+        output_root_path: Path,
+        project_path: Path,
         resume: bool
         ):
     # Prepare the job
-    job_path = _get_job_path(task_id)  # Gets the job path on the worker
-    config_file = job_path / 'config.yaml'
+    output_path = output_root_path / task_uuid
+    config_file = output_path / 'config.yaml'
     if not resume:
         # Setup task dir
-        job_path.mkdir(parents=True, exist_ok=False)
-        output_path = str(job_path)
+        output_path.mkdir(parents=True, exist_ok=False)
         config = yaml.load(config_dump)
-        config['training']['output_path'] = output_path  # FIXME does not generalize!
+        config['training']['output_path'] = str(output_path)  # FIXME does not generalize!
         yaml.dump(config, config_file)
-    script_file_local = task.script_file
-    python_env_command = get_python_env_command(script_file_local, ComputePlatformType.HT.value)
-    print('Using env:', python_env_command)
-    stdout_path = Path(job_path) / 'out.txt'  # FIXME this ignores task.stdout_path
-    stderr_path = Path(job_path) / 'err.txt'
+    python_env_command = get_python_env_command(project_path, ComputePlatformType.HT.value)
+    stdout_path = output_path / 'out.txt'  # FIXME this ignores task.stdout_path
+    stderr_path = output_path / 'err.txt'
 
     # Start the subprocess
-    p = subprocess.Popen(python_env_command + [str(script_file_local), str(config_file)],
+    p = subprocess.Popen(python_env_command + [str(script_file), str(config_file)],
                          stdout=stdout_path.open(mode='w'),
                          stderr=stderr_path.open(mode='w'),
-                         cwd=output_path,
+                         cwd=str(output_path),
                          universal_newlines=True)
 
     # Write into to local db
     job_id = get_current_job().id
-    _update_job(job_id, {'output_path': output_path, 'pid': p.pid})
+    _update_job(job_id, {'output_path': str(output_path), 'pid': p.pid})
 
     # Monitor the job
     monitor_interval = 2  # TODO config?
@@ -66,6 +63,8 @@ def run(
 
 
 def get_logs(task_id):
+    # TODO
+    return {}
     job_path = _get_job_path(task_id)
     logs = {}
     patterns = ('*.log', '*.txt')
@@ -74,10 +73,6 @@ def get_logs(task_id):
             p = Path(f)
             logs[p.stem] = p.read_text()
     return logs
-
-
-def _get_job_path(task_id):
-    return ht_output_path / str(task_id)
 
 
 def get_jobs_info():

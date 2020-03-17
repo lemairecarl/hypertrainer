@@ -21,7 +21,7 @@ class LocalPlatform(ComputePlatform):
             config_file.write_text(task.dump_config())
         # Launch process
         script_file_local = Path(task.script_file)
-        python_env_command = get_python_env_command(script_file_local, task.platform_type.value)  # default: ['python']
+        python_env_command = get_python_env_command(Path(task.project_path), task.platform_type.value)
         print('Using env:', python_env_command)
 
         p = subprocess.Popen(python_env_command + [str(script_file_local), str(config_file)],
@@ -68,11 +68,16 @@ class LocalPlatform(ComputePlatform):
         return Path(task.output_root) / str(task.uuid)
 
 
-def get_python_env_command(script_file_local: Path, platform: str):
-    # TODO use task.output_root instead of parent of script file
+def get_python_env_command(project_path: Path, platform: str):
+    """Get the command to use to invoke python.
+
+    The default is 'python', but this can be configured to use a conda env.
+    """
+
+    # TODO move this in common file (it's used by htplatform_worker.py)
     default_interpreter = ['python']
 
-    env_config_file = script_file_local.parent / 'env.yaml'
+    env_config_file = project_path / 'env.yaml'
     if not env_config_file.exists():
         return default_interpreter
 

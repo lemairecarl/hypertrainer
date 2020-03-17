@@ -65,7 +65,7 @@ class Task(BaseModel):
         return self._script_file
 
     @property
-    def output_root(self):
+    def output_root(self) -> str:
         if self._output_root is None:
             self._output_root = self.config['output_root']
             if not Path(self._output_root).is_absolute():

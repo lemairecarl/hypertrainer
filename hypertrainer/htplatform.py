@@ -1,4 +1,3 @@
-import os
 import time
 from pathlib import Path
 from typing import List, Iterable
@@ -26,8 +25,13 @@ class HtPlatform(ComputePlatform):
         self.worker_queues = {h: Queue(name=h, connection=redis_conn) for h in self.worker_hostnames}
 
     def submit(self, task, resume=False):
-        job = self.jobs_queue.enqueue(run, job_timeout=-1, args=(
-            task.id, task.script_file, task.dump_config(), task.output_path, resume))
+        job = self.jobs_queue.enqueue(run, job_timeout=-1, kwargs=dict(
+            task_uuid=str(task.uuid),
+            script_file=Path(task.script_file),
+            config_dump=task.dump_config(),
+            output_root_path=Path(task.output_root),
+            project_path=Path(task.project_path),
+            resume=resume))
         # At this point, we only know the rq job id. No pid since the job might have to wait.
         return job.id
 
@@ -45,12 +49,15 @@ class HtPlatform(ComputePlatform):
         # TODO only check requested ids
 
         for t in tasks:
-            t.status = TaskStatus.Unknown
+            t.status = TaskStatus.Lost
         job_id_to_task = {t.job_id: t for t in tasks}
+        found_jobs = 0
 
         info_dicts = self._get_info_dict_for_each_worker()
         for hostname, local_db in zip(self.worker_hostnames, info_dicts):
             for job_id in set(local_db.keys()).intersection(job_id_to_task.keys()):
+                found_jobs += 1
+
                 job_info = local_db[job_id]
                 t = job_id_to_task[job_id]
 
@@ -59,7 +66,7 @@ class HtPlatform(ComputePlatform):
                 t.hostname = hostname
 
     def _get_info_dict_for_each_worker(self):
-        rq_jobs = [q.enqueue(get_jobs_info, ttl=1, result_ttl=1) for q in self.worker_queues.values()]
+        rq_jobs = [q.enqueue(get_jobs_info, ttl=2, result_ttl=2) for q in self.worker_queues.values()]
         results = wait_for_results(rq_jobs, wait_secs=1)
         return results
 
