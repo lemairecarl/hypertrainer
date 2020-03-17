@@ -79,6 +79,10 @@ def ping(msg):
     return msg
 
 
+def raise_exception(exc_type):
+    raise exc_type
+
+
 def get_jobs_info():
     return _get_db_contents()
 

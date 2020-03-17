@@ -10,7 +10,7 @@ from hypertrainer.htplatform import HtPlatform
 from hypertrainer.task import Task
 from hypertrainer.utils import TaskStatus, yaml
 from hypertrainer.utils import deep_assert_equal
-from worker import WorkerContext
+from worker import logfile as worker_logfile
 
 SCRIPTS_PATH = '/home/carl/source/hypertrainer/tests/scripts'  # FIXME
 
@@ -52,6 +52,7 @@ def test_submit_local():
         experiment_manager.update_tasks()
         status = Task.get(Task.id == tasks[2].id).status
         return status == TaskStatus.Finished
+
     wait_true(check_finished, interval_secs=2)
 
     # 3. Check stuff on each task
@@ -149,28 +150,28 @@ def test_delete_local_task():
 
 
 def test_submit_rq_task():
-    with WorkerContext(hostname='localhost'):
+    ht_platform = HtPlatform(['localhost'])
+    experiment_manager.platform_instances[ComputePlatformType.HT] = ht_platform  # FIXME
+    try:
+        answers = ht_platform.ping_workers()
+    except TimeoutError:
+        raise AssertionError('The ping timed out. A worker must listen queue \'localhost\'')
+    assert answers == ['localhost']
 
-        ht_platform = HtPlatform(['localhost'])
-        experiment_manager.platform_instances[ComputePlatformType.HT] = ht_platform  #FIXME
-        try:
-            answers = ht_platform.ping_workers()
-        except TimeoutError:
-            raise AssertionError('The ping timed out. A worker must listen queue \'localhost\'')
-        assert answers == ['localhost']
+    # 1. Submit rq task
+    tasks = experiment_manager.create_tasks(
+        config_file=SCRIPTS_PATH + '/test_submit.yaml',
+        platform='htPlatform')
+    task_id = tasks[0].id
 
-        # 1. Submit rq task
-        tasks = experiment_manager.create_tasks(
-            config_file=SCRIPTS_PATH + '/test_submit.yaml',
-            platform='htPlatform')
-        task_id = tasks[0].id
+    # 2. Check that the task finishes successfully
+    def check_finished():
+        experiment_manager.update_tasks()
+        status = Task.get(Task.id == task_id).status
+        return status == TaskStatus.Finished
 
-        # 2. Check that the task finishes successfully
-        def check_finished():
-            experiment_manager.update_tasks()
-            status = Task.get(Task.id == task_id).status
-            return status == TaskStatus.Finished
-        wait_true(check_finished, interval_secs=2)
+    wait_true(check_finished, interval_secs=2)
+
 
 # @pytest.mark.xfail
 # def test_delete_rq_task(client):
@@ -181,6 +182,23 @@ def test_submit_rq_task():
 #     # 5. Check that task does not exist in DB
 #     # 6. Check that files on disk have been deleted
 #     raise NotImplementedError
+
+def test_rq_raise_exception():
+    ht_platform = HtPlatform(['localhost'])
+    experiment_manager.platform_instances[ComputePlatformType.HT] = ht_platform  # FIXME
+
+    if worker_logfile.exists():
+        num_char_to_ignore = len(worker_logfile.read_text())
+    else:
+        num_char_to_ignore = 0
+
+    exc_type = RuntimeError
+    ht_platform.raise_exception_in_worker(exc_type, 'localhost')
+
+    sleep(1)
+    assert worker_logfile.exists()
+    new_log_content = worker_logfile.read_text()[num_char_to_ignore:]
+    assert exc_type.__class__.__name__ in new_log_content
 
 
 def wait_true(fn, interval_secs=1, tries=4):

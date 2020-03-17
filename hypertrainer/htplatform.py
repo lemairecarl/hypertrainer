@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from typing import List, Iterable
+from typing import List, Iterable, Dict
 
 from redis import Redis
 from rq import Queue
@@ -8,7 +8,7 @@ from rq.job import Job
 
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.utils import TaskStatus
-from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping
+from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception
 
 
 class HtPlatform(ComputePlatform):
@@ -22,7 +22,7 @@ class HtPlatform(ComputePlatform):
 
         redis_conn = Redis(port=6380)  # FIXME config
         self.jobs_queue = Queue(name='jobs', connection=redis_conn)
-        self.worker_queues = {h: Queue(name=h, connection=redis_conn) for h in self.worker_hostnames}
+        self.worker_queues: Dict[str, Queue] = {h: Queue(name=h, connection=redis_conn) for h in self.worker_hostnames}
 
     def submit(self, task, resume=False):
         job = self.jobs_queue.enqueue(run, job_timeout=-1, kwargs=dict(
@@ -74,6 +74,9 @@ class HtPlatform(ComputePlatform):
         rq_jobs = [q.enqueue(ping, ttl=2, result_ttl=2, args=(h,)) for h, q in self.worker_queues.items()]
         results = wait_for_results(rq_jobs, wait_secs=1)
         return results
+
+    def raise_exception_in_worker(self, exc_type, queue_name):
+        self.worker_queues[queue_name].enqueue(raise_exception, ttl=2, result_ttl=2, args=(exc_type,))
 
 
 def wait_for_result(rq_job: Job, timeout):
