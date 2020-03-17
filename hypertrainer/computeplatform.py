@@ -4,8 +4,10 @@ from abc import ABC, abstractmethod
 class ComputePlatform(ABC):
     @abstractmethod
     def submit(self, task, resume=False) -> str:
-        """Submit a task and return the plaform specific task id.
+        """Setup and submit a task and return the plaform specific task id.
 
+        If task.output_path is not already set, this method must set it (and
+        make sure the dir is created).
         If resume=True, run script in already-existing output path.
         """
         pass

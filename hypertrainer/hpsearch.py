@@ -3,11 +3,8 @@ from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
-from ruamel.yaml import YAML
 
-from hypertrainer.utils import set_item_at_path
-
-yaml = YAML()
+from hypertrainer.utils import set_item_at_path, yaml
 
 
 def generate_random_value(p):
