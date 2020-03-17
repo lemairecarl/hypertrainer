@@ -161,7 +161,7 @@ def test_submit_rq_task():
     tasks = experiment_manager.create_tasks(
         config_file=SCRIPTS_PATH + '/test_submit.yaml',
         platform='htPlatform')
-    task_id = tasks[0].id
+    task_id = tasks[2].id
 
     # 2. Check that the task finishes successfully
     def check_finished():

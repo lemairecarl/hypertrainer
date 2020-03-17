@@ -22,7 +22,6 @@ class LocalPlatform(ComputePlatform):
         # Launch process
         script_file_local = Path(task.script_file)
         python_env_command = get_python_env_command(Path(task.project_path), task.platform_type.value)
-        print('Using env:', python_env_command)
 
         p = subprocess.Popen(python_env_command + [str(script_file_local), str(config_file)],
                              stdout=task.stdout_path.open(mode='w'),
