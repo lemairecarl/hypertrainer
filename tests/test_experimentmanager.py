@@ -1,22 +1,13 @@
-import os
-import shutil
 from pathlib import Path
 from time import sleep
 
 import pytest
-from ruamel.yaml import YAML
 
-from hypertrainer.computeplatformtype import ComputePlatformType
-from hypertrainer.htplatform import HtPlatform
-from hypertrainer.utils import TaskStatus, deep_assert_equal
+from hypertrainer.db import init_db
 from hypertrainer.experimentmanager import experiment_manager
 from hypertrainer.task import Task
-from hypertrainer.utils import TaskStatus
-from hypertrainer.db import init_db
-
-
-yaml = YAML()
-
+from hypertrainer.utils import TaskStatus, yaml
+from hypertrainer.utils import deep_assert_equal
 
 SCRIPTS_PATH = '/home/carl/source/hypertrainer/tests/scripts'  # FIXME
 
@@ -28,31 +19,44 @@ def test_init_db():
     assert Task.select().count() == 0
 
 
-def test_output_path_empty():
-    out_path = Path(os.environ['HYPERTRAINER_OUTPUT'])
-    for p in out_path.glob('*/'):
-        shutil.rmtree(p)
+def test_local_output_path():
+    tasks = experiment_manager.create_tasks(
+        config_file=SCRIPTS_PATH + '/simple.yaml',
+        platform='local')
+    task = tasks[0]
 
-    assert len(list(out_path.glob('*/'))) == 0
+    assert 'output_root' in task.config
+
+    assert Path(task.output_root).exists()
+
+    output_path = task.output_path
+
+    assert Path(output_path).exists()
 
 
 def test_submit_local():
     # 1. Launch task
-    experiment_manager.create_tasks(
-        script_file=SCRIPTS_PATH + '/script_test_submit.py',
+    tasks = experiment_manager.create_tasks(
         config_file=SCRIPTS_PATH + '/test_submit.yaml',
         platform='local')
+    task_ids = [t.id for t in tasks]
 
-    # 2. Wait for it to finish, then get tasks
-    sleep(2)
-    tasks = experiment_manager.get_tasks()
+    # 2. Check that the hp search configs were generated
     assert len(tasks) == 3
+
+    # Wait task finished
+    def check_finished():
+        experiment_manager.update_tasks()
+        status = Task.get(Task.id == tasks[2].id).status
+        return status == TaskStatus.Finished
+    wait_true(check_finished, interval_secs=2)
 
     # 3. Check stuff on each task
     p_exp10_values, p_exp2_values, p_lin_values = set(), set(), set()
     orig_yaml = yaml.load(Path(SCRIPTS_PATH) / 'test_submit.yaml')
-    for t in tasks:  # type: Task
+    for t in Task.select().where(Task.id.in_(task_ids)):  # type: Task
         # Check that yaml has been written correctly
+        # NOTE: THIS FAILS IN DEBUG MODE
         deep_assert_equal(t.config, orig_yaml, exclude_keys=['output_path', 'is_child', 'dummy_param_exp10',
                                                              'dummy_param_exp2', 'dummy_param_lin'])
 
@@ -89,7 +93,6 @@ def test_archive_task():
 
     # 1. Submit local task
     tasks = experiment_manager.create_tasks(
-        script_file=SCRIPTS_PATH + '/script_test_submit.py',
         config_file=SCRIPTS_PATH + '/test_submit.yaml',
         platform='local')
     task_id = tasks[0].id
@@ -122,7 +125,6 @@ def test_delete_local_task():
 
     # 1. Submit task
     tasks = experiment_manager.create_tasks(
-        script_file=SCRIPTS_PATH + '/script_test_submit.py',
         config_file=SCRIPTS_PATH + '/test_submit.yaml',
         platform='local')
     task_id = tasks[0].id

@@ -7,7 +7,7 @@ from rq import get_current_job
 
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.localplatform import get_python_env_command
-from hypertrainer.utils import resolve_path, setup_scripts_path, yaml
+from hypertrainer.utils import yaml
 
 ht_root = Path.home() / 'hypertrainer'  # FIXME config
 ht_output_path = ht_root / 'output'
@@ -22,7 +22,6 @@ def run(
         resume: bool
         ):
     # Prepare the job
-    setup_scripts_path()  # FIXME do not run this each time
     job_path = _get_job_path(task_id)  # Gets the job path on the worker
     config_file = job_path / 'config.yaml'
     if not resume:
@@ -32,7 +31,7 @@ def run(
         config = yaml.load(config_dump)
         config['training']['output_path'] = output_path  # FIXME does not generalize!
         yaml.dump(config, config_file)
-    script_file_local = resolve_path(script_filename)
+    script_file_local = task.script_file
     python_env_command = get_python_env_command(script_file_local, ComputePlatformType.HT.value)
     print('Using env:', python_env_command)
     stdout_path = Path(job_path) / 'out.txt'  # FIXME this ignores task.stdout_path

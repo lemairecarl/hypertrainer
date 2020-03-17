@@ -3,7 +3,7 @@ from time import time
 
 import numpy as np
 import pandas as pd
-from peewee import CharField, IntegerField, FloatField, Field, BooleanField
+from peewee import CharField, IntegerField, FloatField, Field, BooleanField, UUIDField
 
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.db import BaseModel, EnumField, YamlField, get_db
@@ -11,7 +11,8 @@ from hypertrainer.utils import TaskStatus, set_item_at_path, get_item_at_path, y
 
 
 class Task(BaseModel):
-    script_file = CharField()  # Relative to the scripts folder, that exists on all platforms TODO document this
+    uuid = UUIDField()
+    project_path = CharField()
     config = YamlField()
     job_id = CharField(default='')
     hostname = CharField(default='')
@@ -42,6 +43,9 @@ class Task(BaseModel):
         self.ep_time_remain = None
         self.cur_phase = None
 
+        self._script_file = None
+        self._output_root = None
+
     @property
     def is_running(self):
         return self.status == TaskStatus.Running
@@ -53,6 +57,20 @@ class Task(BaseModel):
     @property
     def stderr_path(self) -> Path:
         return Path(self.output_path) / 'err.txt'
+
+    @property
+    def script_file(self) -> str:
+        if self._script_file is None:
+            self._script_file = str(Path(str(self.project_path)) / self.config['script'])
+        return self._script_file
+
+    @property
+    def output_root(self):
+        if self._output_root is None:
+            self._output_root = self.config['output_root']
+            if not Path(self._output_root).is_absolute():
+                raise Exception('output_root path must be absolute')
+        return self._output_root
 
     @property
     def output_path(self) -> str:

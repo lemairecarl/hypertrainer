@@ -4,39 +4,23 @@ import subprocess
 from pathlib import Path
 
 from hypertrainer.computeplatform import ComputePlatform
-from hypertrainer.utils import resolve_path, TaskStatus, yaml
+from hypertrainer.utils import TaskStatus, yaml
 
 
 class LocalPlatform(ComputePlatform):
-    root_dir: Path = None
-
     def __init__(self):
-        self.setup_output_path()
-
         self.processes = {}
 
-    @staticmethod
-    def setup_output_path():
-        # Setup root output dir
-        p = os.environ.get('HYPERTRAINER_OUTPUT')
-        if p is None:
-            LocalPlatform.root_dir = Path.home() / 'hypertrainer' / 'output'
-            print('Using root output dir: {}\nYou can configure this with $HYPERTRAINER_OUTPUT.'
-                  .format(LocalPlatform.root_dir))
-        else:
-            LocalPlatform.root_dir = Path(p)
-        LocalPlatform.root_dir.mkdir(parents=True, exist_ok=True)
-
     def submit(self, task, resume=False):
-        job_path = self._make_job_path(task)
-        config_file = job_path / 'config.yaml'
+        job_path: Path = self._make_job_path(task)
+        config_file: Path = job_path / 'config.yaml'
         if not resume:
             # Setup task dir
             job_path.mkdir(parents=True, exist_ok=False)
             task.output_path = str(job_path)
             config_file.write_text(task.dump_config())
         # Launch process
-        script_file_local = resolve_path(task.script_file)
+        script_file_local = Path(task.script_file)
         python_env_command = get_python_env_command(script_file_local, task.platform_type.value)  # default: ['python']
         print('Using env:', python_env_command)
 
@@ -79,11 +63,13 @@ class LocalPlatform(ComputePlatform):
                 else:
                     t.status = TaskStatus.Crashed
 
-    def _make_job_path(self, task):
-        return self.root_dir / str(task.id)
+    @staticmethod
+    def _make_job_path(task):
+        return Path(task.output_root) / str(task.uuid)
 
 
 def get_python_env_command(script_file_local: Path, platform: str):
+    # TODO use task.output_root instead of parent of script file
     default_interpreter = ['python']
 
     env_config_file = script_file_local.parent / 'env.yaml'

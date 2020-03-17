@@ -1,5 +1,8 @@
+script: script_test_submit.py
+output_root: /home/carl/hypertrainer/output
+
 training:
-  output_path: dummy
+  output_path: ERROR  # TODO
   dummy_param_exp10: 0
   dummy_param_exp2: 0
   dummy_param_lin: 0

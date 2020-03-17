@@ -1,8 +1,8 @@
 import os
 import shutil
+import uuid
+from pathlib import Path
 from typing import Iterable, Optional
-
-from ruamel.yaml import YAML
 
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.hpsearch import generate as generate_hpsearch
@@ -10,9 +10,7 @@ from hypertrainer.htplatform import HtPlatform
 from hypertrainer.localplatform import LocalPlatform
 from hypertrainer.slurmplatform import SlurmPlatform
 from hypertrainer.task import Task
-from hypertrainer.utils import resolve_path
-
-yaml = YAML()
+from hypertrainer.utils import yaml
 
 
 class ExperimentManager:
@@ -68,9 +66,9 @@ class ExperimentManager:
             Task.bulk_update(tasks, Task.get_fields())  # FIXME updating all records everytime is heavy
 
     @staticmethod
-    def create_tasks(platform: str, script_file: str, config_file: str, project: str = ''):
+    def create_tasks(platform: str, config_file: str, project: str = ''):
         # Load yaml config
-        config_file_path = resolve_path(config_file)
+        config_file_path = Path(config_file)
         yaml_config = yaml.load(config_file_path)
         yaml_config = {} if yaml_config is None else yaml_config  # handle empty config file
         name = config_file_path.stem
@@ -83,7 +81,12 @@ class ExperimentManager:
         tasks = []
         ptype = ComputePlatformType(platform)
         for name, config in configs.items():
-            t = Task(script_file=script_file, config=config, name=name, platform_type=ptype, project=project)
+            t = Task(uuid=uuid.uuid4(),
+                     project_path=str(config_file_path.parent),
+                     config=config,
+                     name=name,
+                     platform_type=ptype,
+                     project=project)
             t.save()  # insert in database
             tasks.append(t)
         # Submit tasks
