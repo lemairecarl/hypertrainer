@@ -82,7 +82,7 @@ class ExperimentManager:
         ptype = ComputePlatformType(platform)
         for name, config in configs.items():
             t = Task(uuid=uuid.uuid4(),
-                     project_path=str(config_file_path.parent),
+                     project_path=str(config_file_path.parent.absolute()),
                      config=config,
                      name=name,
                      platform_type=ptype,

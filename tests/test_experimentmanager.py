@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from time import sleep
 
@@ -11,7 +12,7 @@ from hypertrainer.task import Task
 from hypertrainer.utils import TaskStatus, yaml
 from hypertrainer.utils import deep_assert_equal
 
-SCRIPTS_PATH = '/home/carl/source/hypertrainer/tests/scripts'  # FIXME
+scripts_path = Path(__file__).parent / 'scripts'
 
 
 def test_init_db():
@@ -23,7 +24,7 @@ def test_init_db():
 
 def test_local_output_path():
     tasks = experiment_manager.create_tasks(
-        config_file=SCRIPTS_PATH + '/simple.yaml',
+        config_file=str(scripts_path / 'simple.yaml'),
         platform='local')
     task = tasks[0]
 
@@ -36,10 +37,33 @@ def test_local_output_path():
     assert Path(output_path).exists()
 
 
+def test_other_cwd():
+    """Test that experiment_manager works independently from working dir"""
+
+    old_cwd = os.getcwd()
+    try:
+        os.mkdir('/tmp/hypertrainer')  # TODO windows friendly?
+    except FileExistsError:
+        pass
+    os.chdir('/tmp/hypertrainer')
+
+    tasks = experiment_manager.create_tasks(
+        config_file=str(scripts_path / 'simple.yaml'),
+        platform='local')
+    task = tasks[0]
+
+    assert Path(task.project_path).exists()
+    assert Path(task.script_file).exists()
+    assert Path(task.output_root).exists()
+    assert Path(task.output_path).exists()
+
+    os.chdir(old_cwd)
+
+
 def test_submit_local():
     # 1. Launch task
     tasks = experiment_manager.create_tasks(
-        config_file=SCRIPTS_PATH + '/test_submit.yaml',
+        config_file=str(scripts_path / 'test_submit.yaml'),
         platform='local')
     task_ids = [t.id for t in tasks]
 
@@ -56,7 +80,7 @@ def test_submit_local():
 
     # 3. Check stuff on each task
     p_exp10_values, p_exp2_values, p_lin_values = set(), set(), set()
-    orig_yaml = yaml.load(Path(SCRIPTS_PATH) / 'test_submit.yaml')
+    orig_yaml = yaml.load(scripts_path / 'test_submit.yaml')
     for t in Task.select().where(Task.id.in_(task_ids)):  # type: Task
         # Check that yaml has been written correctly
         # NOTE: THIS FAILS IN DEBUG MODE
@@ -96,7 +120,7 @@ def test_archive_task():
 
     # 1. Submit local task
     tasks = experiment_manager.create_tasks(
-        config_file=SCRIPTS_PATH + '/test_submit.yaml',
+        config_file=str(scripts_path / 'test_submit.yaml'),
         platform='local')
     task_id = tasks[0].id
 
@@ -128,7 +152,7 @@ def test_delete_local_task():
 
     # 1. Submit task
     tasks = experiment_manager.create_tasks(
-        config_file=SCRIPTS_PATH + '/test_submit.yaml',
+        config_file=str(scripts_path / 'test_submit.yaml'),
         platform='local')
     task_id = tasks[0].id
     # 1.1 Wait that the folder exist on disk
@@ -153,13 +177,15 @@ def test_submit_rq_task():
     experiment_manager.platform_instances[ComputePlatformType.HT] = ht_platform  # FIXME
     try:
         answers = ht_platform.ping_workers()
+    except (ConnectionError, ConnectionRefusedError):
+        raise Exception('Could not connect to Redis. Make sure redis-server is running.')
     except TimeoutError:
-        raise AssertionError('The ping timed out. A worker must listen queue \'localhost\'')
+        raise Exception('The ping timed out. A worker must listen queue \'localhost\'')
     assert answers == ['localhost']
 
     # 1. Submit rq task
     tasks = experiment_manager.create_tasks(
-        config_file=SCRIPTS_PATH + '/test_submit.yaml',
+        config_file=str(scripts_path / 'test_submit.yaml'),
         platform='htPlatform')
     task_id = tasks[2].id
 

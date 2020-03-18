@@ -21,6 +21,8 @@ class LocalPlatform(ComputePlatform):
             config_file.write_text(task.dump_config())
         # Launch process
         script_file_local = Path(task.script_file)
+        if not script_file_local.is_absolute():
+            script_file_local = Path(task.project_path) / script_file_local
         python_env_command = get_python_env_command(Path(task.project_path), task.platform_type.value)
 
         p = subprocess.Popen(python_env_command + [str(script_file_local), str(config_file)],
