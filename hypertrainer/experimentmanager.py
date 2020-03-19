@@ -2,7 +2,7 @@ import os
 import shutil
 import uuid
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Optional, List
 
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.hpsearch import generate as generate_hpsearch
@@ -26,6 +26,9 @@ class ExperimentManager:
         if 'HTPLATFORM_WORKERS' in os.environ:
             ExperimentManager.platform_instances[ComputePlatformType.HT] \
                 = HtPlatform(os.environ['HTPLATFORM_WORKERS'].split(','))
+        else:
+            ExperimentManager.platform_instances[ComputePlatformType.HT] \
+                = HtPlatform(['localhost'])  # FIXME
         if 'GRAHAM' in os.environ:
             ExperimentManager.platform_instances[ComputePlatformType.GRAHAM] \
                 = SlurmPlatform(server_user=os.environ['GRAHAM'])
@@ -34,7 +37,9 @@ class ExperimentManager:
                 = SlurmPlatform(server_user=os.environ['BELUGA'])
 
     @staticmethod
-    def get_tasks(platform: Optional[ComputePlatformType] = None, proj: Optional[str] = None, archived=False):
+    def get_tasks(platform: Optional[ComputePlatformType] = None,
+                  proj: Optional[str] = None,
+                  archived=False) -> List[Task]:
         # TODO rename this function? Maybe get_filtered_tasks?
         p_list = [platform] if platform is not None else None
         ExperimentManager.update_tasks(platforms=p_list)  # TODO return tasks to avoid other db query?
@@ -143,7 +148,10 @@ class ExperimentManager:
 
     @staticmethod
     def get_platform(task: Task):
-        return ExperimentManager.platform_instances[task.platform_type]
+        try:
+            return ExperimentManager.platform_instances[task.platform_type]
+        except KeyError:
+            raise Exception(f'The platform {task.platform_type} has not been initialized.')
 
     @staticmethod
     def list_platforms(as_str=False):
