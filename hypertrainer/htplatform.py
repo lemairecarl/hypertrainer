@@ -43,7 +43,7 @@ class HtPlatform(ComputePlatform):
         return logs
 
     def cancel(self, task):
-        pass
+        raise NotImplementedError
 
     def update_tasks(self, tasks):
         # TODO only check requested ids

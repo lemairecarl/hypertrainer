@@ -4,6 +4,8 @@ import uuid
 from pathlib import Path
 from typing import Iterable, Optional, List
 
+from tabulate import tabulate
+
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.hpsearch import generate as generate_hpsearch
 from hypertrainer.htplatform import HtPlatform
@@ -43,7 +45,9 @@ class ExperimentManager:
 
     def get_tasks(self, platform: Optional[ComputePlatformType] = None,
                   proj: Optional[str] = None,
-                  archived=False) -> List[Task]:
+                  archived=False,
+                  descending_order=True,
+                  ) -> List[Task]:
         # TODO rename this function? Maybe get_filtered_tasks?
         p_list = [platform] if platform is not None else None
         self.update_tasks(platforms=p_list)  # TODO return tasks to avoid other db query?
@@ -55,7 +59,8 @@ class ExperimentManager:
 
         if proj is not None:
             q = q.where(Task.project == proj)
-        q = q.order_by(Task.id.desc())
+        if descending_order:
+            q = q.order_by(Task.id.desc())
         tasks = list(q)
 
         for t in tasks:
@@ -105,7 +110,7 @@ class ExperimentManager:
         task.job_id = self.get_platform(task).submit(task)
         task.post_submit()
 
-    def get_tasks_by_id(self, task_ids: list):
+    def get_tasks_by_id(self, task_ids: List[int]):
         return list(Task.select().where(Task.id.in_(task_ids)))
 
     def resume_tasks(self, tasks: Iterable[Task]):
@@ -120,15 +125,18 @@ class ExperimentManager:
                 self.get_platform(t).cancel(t)  # TODO one bulk ssh command
                 t.post_cancel()
 
+    def cancel_tasks_by_id(self, task_ids: List[int]):
+        self.cancel_tasks(self.get_tasks_by_id(task_ids))
+
     def monitor(self, t: Task):
         # TODO rename this method 'update' or something?
         t.logs = self.get_platform(t).fetch_logs(t)
         t.interpret_logs()
 
-    def archive_tasks_by_id(self, task_ids: list):
+    def archive_tasks_by_id(self, task_ids: List[int]):
         Task.update(is_archived=True).where(Task.id.in_(task_ids)).execute()
 
-    def delete_tasks_by_id(self, task_ids: list):
+    def delete_tasks_by_id(self, task_ids: List[int]):
         if Task.select().where(Task.id.in_(task_ids) & (Task.is_archived == False)).count() > 0:
             raise RuntimeError('Only archived tasks can be deleted')
         for t in Task.select().where(Task.id.in_(task_ids)):
@@ -157,6 +165,27 @@ class ExperimentManager:
             return [p.value for p in self.platform_instances.keys()]
         else:
             return list(self.platform_instances.keys())
+
+    def print_tasks(self, **kwargs):
+        """Print tasks list"""
+        tasks = self.get_tasks(descending_order=False, **kwargs)
+        table = [[t.id,
+                  #t.uuid,
+                  t.job_id,
+                  t.hostname,
+                  t.platform_type.abbrev,
+                  t.name,
+                  t.status.abbrev] for t in tasks]
+        headers = [
+            'ID',
+            #'UUID',
+            'JobID',
+            'Hostname',
+            'Platf',
+            'Name',
+            'Stat'
+        ]
+        print(tabulate(table, headers=headers))
 
 
 experiment_manager = ExperimentManager()

@@ -81,6 +81,10 @@ class TaskStatus(Enum):
     Unknown = 'Unknown'
 
     @property
+    def abbrev(self):
+        return self.value[:4]
+
+    @property
     def active_states(self):
         return {TaskStatus.Waiting, TaskStatus.Running, TaskStatus.Unknown}
 

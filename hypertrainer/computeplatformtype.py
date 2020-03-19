@@ -7,3 +7,10 @@ class ComputePlatformType(Enum):
     HELIOS = 'helios'
     GRAHAM = 'graham'
     BELUGA = 'beluga'
+
+    @property
+    def abbrev(self):
+        if self.value == 'htPlatform':
+            return 'ht'
+        else:
+            return self.value
