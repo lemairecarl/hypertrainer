@@ -225,6 +225,12 @@ class TestRq:
         # Check that files on disk have been deleted
         wait_true(lambda: not Path(task.output_path).exists())
 
+        # Check that the job does not exist in the worker's db
+        info_dicts = ht_platform._get_info_dict_for_each_worker()
+        assert len(info_dicts) == 1
+        worker_db = info_dicts[0]
+        assert task.job_id not in worker_db
+
 
 def wait_true(fn, interval_secs=1, tries=4):
     for i in range(tries):

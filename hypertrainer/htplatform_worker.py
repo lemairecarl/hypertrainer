@@ -1,3 +1,4 @@
+import contextlib
 import pickle
 import shutil
 import subprocess
@@ -69,9 +70,10 @@ def get_logs(task_id):
     return logs
 
 
-def delete_path(path):
-    print('Deleting', path)
-    shutil.rmtree(path,
+def delete_job(job_id: str, output_path: str):
+    _delete_job(job_id)
+    print('Deleting', output_path)
+    shutil.rmtree(output_path,
                   onerror=lambda function, path, excinfo: print('ERROR', function, path, excinfo))
 
 
@@ -93,15 +95,27 @@ def _check_init_db():
             pickle.dump({}, f)
 
 
-def _update_job(job_id: str, data: dict):
+@contextlib.contextmanager
+def local_db_context():
     _check_init_db()
-    with local_db.open('rb') as f:
+    with local_db.open('r+b') as f:
         db = pickle.load(f)
-    if job_id not in db:
-        db[job_id] = {}
-    db[job_id].update(data)
-    with local_db.open('wb') as f:
+        yield db
+        f.seek(0)
+        f.truncate()
         pickle.dump(db, f)
+
+
+def _update_job(job_id: str, data: dict):
+    with local_db_context() as db:
+        if job_id not in db:
+            db[job_id] = {}
+        db[job_id].update(data)
+
+
+def _delete_job(job_id: str):
+    with local_db_context() as db:
+        del db[job_id]
 
 
 def _get_db_contents():

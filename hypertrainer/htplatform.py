@@ -9,7 +9,7 @@ from rq.job import Job
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.utils import TaskStatus, get_python_env_command
-from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception, delete_path
+from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception, delete_job
 
 
 class HtPlatform(ComputePlatform):
@@ -40,7 +40,7 @@ class HtPlatform(ComputePlatform):
     def fetch_logs(self, task, keys=None):
         if task.hostname == '':  # The job hasn't been consumed yet
             return {}
-        rq_job = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.id,), ttl=1, result_ttl=2)
+        rq_job = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.id,), ttl=2, result_ttl=2)
         logs = wait_for_result(rq_job, timeout=2)
         return logs
 
@@ -68,7 +68,7 @@ class HtPlatform(ComputePlatform):
                 t.hostname = hostname
 
     def delete(self, task):
-        self.worker_queues[task.hostname].enqueue(delete_path, args=(task.output_path,), ttl=4)
+        self.worker_queues[task.hostname].enqueue(delete_job, args=(task.job_id, task.output_path), ttl=4)
 
     def _get_info_dict_for_each_worker(self):
         rq_jobs = [q.enqueue(get_jobs_info, ttl=2, result_ttl=2) for q in self.worker_queues.values()]

@@ -36,12 +36,6 @@ class ExperimentManager:
         else:
             self.platform_instances[ComputePlatformType.HT] \
                 = HtPlatform(['localhost'])  # FIXME
-        if 'GRAHAM' in os.environ:
-            self.platform_instances[ComputePlatformType.GRAHAM] \
-                = SlurmPlatform(server_user=os.environ['GRAHAM'])
-        if 'BELUGA' in os.environ:
-            self.platform_instances[ComputePlatformType.BELUGA] \
-                = SlurmPlatform(server_user=os.environ['BELUGA'])
 
     def get_tasks(self, platform: Optional[ComputePlatformType] = None,
                   proj: Optional[str] = None,
@@ -49,22 +43,28 @@ class ExperimentManager:
                   descending_order=True,
                   ) -> List[Task]:
         # TODO rename this function? Maybe get_filtered_tasks?
+
+        # Update the records (e.g. status)
         p_list = [platform] if platform is not None else None
         self.update_tasks(platforms=p_list)  # TODO return tasks to avoid other db query?
 
+        # Get the records
         if platform is None:
             q = Task.select().where(Task.is_archived == archived)
         else:
             q = Task.select().where((Task.platform_type == platform) & (Task.is_archived == archived))
-
         if proj is not None:
             q = q.where(Task.project == proj)
         if descending_order:
             q = q.order_by(Task.id.desc())
         tasks = list(q)
 
+        # Get the logs
         for t in tasks:
-            self.monitor(t)
+            try:
+                self.monitor(t)
+            except TimeoutError:
+                t.logs = {'err': 'Timed out'}
         return tasks
 
     def update_tasks(self, platforms: list = None):
