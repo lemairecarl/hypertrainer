@@ -54,6 +54,7 @@ commands = {
     #'get_tasks': em.get_tasks,
     'get': by_id_helper(em.get_tasks_by_id, squeeze_returned_list=True),
     'config': em.print_task_config,
+    'out': em.print_output,
     'archive': by_id_helper(em.archive_tasks_by_id),
     'delete': by_id_helper(em.delete_tasks_by_id),
     'cancel': by_id_helper(em.cancel_tasks_by_id)

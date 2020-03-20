@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Iterable, Optional, List
 
 from tabulate import tabulate
+from termcolor import colored
 
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
@@ -220,6 +221,20 @@ class ExperimentManager:
 
         t = self.get_tasks_by_id([task_id])[0]
         print_yaml(t.config)
+
+    def print_output(self, task_id):
+        """Print the task's out and err logs"""
+
+        task = self.get_tasks_by_id([task_id])[0]
+        self.monitor(task)
+        logs = task.logs
+
+        print(colored('--- Begin log `out` ---', attrs=['bold']))
+        print(logs.get('out', '`out` log does not exist'))
+        print(colored('--- End log `out` -----', attrs=['bold']))
+        print(colored('--- Begin log `err` ---', attrs=['bold']))
+        print(logs.get('err', '`err` log does not exist'))
+        print(colored('--- End log `err` -----', attrs=['bold']))
 
 
 experiment_manager = ExperimentManager()
