@@ -2,34 +2,29 @@ import pickle
 import subprocess
 from pathlib import Path
 from time import sleep
+from typing import List
 
 from rq import get_current_job
 
-from hypertrainer.computeplatformtype import ComputePlatformType
-from hypertrainer.localplatform import get_python_env_command
 from hypertrainer.utils import yaml, hypertrainer_home
 
 local_db = hypertrainer_home / 'db.pkl'  # FIXME config
 
 
 def run(
-        task_uuid: str,
         script_file: Path,
+        output_path: Path,
         config_dump: str,
-        output_root_path: Path,
-        project_path: Path,
+        python_env_command: List[str],
         resume: bool
         ):
     # Prepare the job
-    output_path = output_root_path / task_uuid
     config_file = output_path / 'config.yaml'
     if not resume:
         # Setup task dir
         output_path.mkdir(parents=True, exist_ok=False)
         config = yaml.load(config_dump)
-        config['training']['output_path'] = str(output_path)  # FIXME does not generalize!
         yaml.dump(config, config_file)
-    python_env_command = get_python_env_command(project_path, ComputePlatformType.HT.value)
     stdout_path = output_path / 'out.txt'  # FIXME this ignores task.stdout_path
     stderr_path = output_path / 'err.txt'
 

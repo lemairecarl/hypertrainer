@@ -22,191 +22,208 @@ def test_init_db():
     assert Task.select().count() == 0
 
 
-def test_local_output_path():
-    tasks = experiment_manager.create_tasks(
-        config_file=str(scripts_path / 'simple.yaml'),
-        platform='local')
-    task = tasks[0]
+class TestLocal:
+    def test_local_output_path(self):
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'simple.yaml'),
+            platform='local')
+        task = tasks[0]
 
-    assert 'output_root' in task.config
+        assert 'output_root' in task.config
 
-    assert Path(task.output_root).exists()
+        assert Path(task.output_root).exists()
 
-    output_path = task.output_path
+        output_path = task.output_path
 
-    assert Path(output_path).exists()
-
-
-def test_other_cwd():
-    """Test that experiment_manager works independently from working dir"""
-
-    old_cwd = os.getcwd()
-    try:
-        os.mkdir('/tmp/hypertrainer')  # TODO windows friendly?
-    except FileExistsError:
-        pass
-    os.chdir('/tmp/hypertrainer')
-
-    tasks = experiment_manager.create_tasks(
-        config_file=str(scripts_path / 'simple.yaml'),
-        platform='local')
-    task = tasks[0]
-
-    assert Path(task.project_path).exists()
-    assert Path(task.script_file).exists()
-    assert Path(task.output_root).exists()
-    assert Path(task.output_path).exists()
-
-    os.chdir(old_cwd)
+        assert Path(output_path).exists()
 
 
-def test_submit_local():
-    # 1. Launch task
-    tasks = experiment_manager.create_tasks(
-        config_file=str(scripts_path / 'test_submit.yaml'),
-        platform='local')
-    task_ids = [t.id for t in tasks]
+    def test_other_cwd(self):
+        """Test that experiment_manager works independently from working dir"""
 
-    # 2. Check that the hp search configs were generated
-    assert len(tasks) == 3
+        old_cwd = os.getcwd()
+        try:
+            os.mkdir('/tmp/hypertrainer')  # TODO windows friendly?
+        except FileExistsError:
+            pass
+        os.chdir('/tmp/hypertrainer')
 
-    # Wait task finished
-    def check_finished():
-        experiment_manager.update_tasks()
-        status = Task.get(Task.id == tasks[2].id).status
-        return status == TaskStatus.Finished
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'simple.yaml'),
+            platform='local')
+        task = tasks[0]
 
-    wait_true(check_finished, interval_secs=2)
+        assert Path(task.project_path).exists()
+        assert Path(task.script_file).exists()
+        assert Path(task.output_root).exists()
+        assert Path(task.output_path).exists()
 
-    # 3. Check stuff on each task
-    p_exp10_values, p_exp2_values, p_lin_values = set(), set(), set()
-    orig_yaml = yaml.load(scripts_path / 'test_submit.yaml')
-    for t in Task.select().where(Task.id.in_(task_ids)):  # type: Task
-        # Check that yaml has been written correctly
-        # NOTE: THIS FAILS IN DEBUG MODE
-        deep_assert_equal(t.config, orig_yaml, exclude_keys=['output_path', 'is_child', 'dummy_param_exp10',
-                                                             'dummy_param_exp2', 'dummy_param_lin'])
-
-        # Check output
-        experiment_manager.monitor(t)
-        assert t.logs['err'].strip() == 'printing to stderr'
-        assert t.logs['out'].strip() == 'printing to stdout'
-
-        # Check status
-        assert t.status == TaskStatus.Finished
-
-        # Check hyperparam search
-        p_exp10 = t.config['training']['dummy_param_exp10']
-        p_exp2 = t.config['training']['dummy_param_exp2']
-        p_lin = t.config['training']['dummy_param_lin']
-
-        # Hyperparam value must be unique
-        assert p_exp10 not in p_exp10_values
-        assert p_exp2 not in p_exp2_values
-        assert p_lin not in p_lin_values
-        p_exp10_values.add(p_exp10)
-        p_exp2_values.add(p_exp2)
-        p_lin_values.add(p_lin)
-
-        # Hyperparameter values must be in range
-        assert 10 ** -2 <= p_exp10 <= 10 ** 2
-        assert 2 ** -2 <= p_exp2 <= 2 ** 2
-        assert -2 <= p_lin <= 2
+        os.chdir(old_cwd)
 
 
-def test_archive_task():
-    from hypertrainer.experimentmanager import experiment_manager
-    from hypertrainer.task import Task
+    def test_submit_local(self):
+        # 1. Launch task
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'test_submit.yaml'),
+            platform='local')
+        task_ids = [t.id for t in tasks]
 
-    # 1. Submit local task
-    tasks = experiment_manager.create_tasks(
-        config_file=str(scripts_path / 'test_submit.yaml'),
-        platform='local')
-    task_id = tasks[0].id
+        # 2. Check that the hp search configs were generated
+        assert len(tasks) == 3
 
-    # 2. Archive task
-    experiment_manager.archive_tasks_by_id([task_id])
+        # Wait task finished
+        def check_finished():
+            experiment_manager.update_tasks()
+            status = Task.get(Task.id == tasks[2].id).status
+            return status == TaskStatus.Finished
 
-    # 3. Check that it still exists
-    assert Task.select().where(Task.id == task_id).count() == 1
+        wait_true(check_finished, interval_secs=2)
 
-    # 4. Check that is_archived == True
-    assert Task.get(Task.id == task_id).is_archived
+        # 3. Check stuff on each task
+        p_exp10_values, p_exp2_values, p_lin_values = set(), set(), set()
+        orig_yaml = yaml.load(scripts_path / 'test_submit.yaml')
+        for t in Task.select().where(Task.id.in_(task_ids)):  # type: Task
+            # Check that yaml has been written correctly
+            # NOTE: THIS FAILS IN DEBUG MODE
+            deep_assert_equal(t.config, orig_yaml, exclude_keys=['output_path', 'is_child', 'dummy_param_exp10',
+                                                                 'dummy_param_exp2', 'dummy_param_lin'])
 
-    # 5. Check that it is absent from the non-archived list
-    non_archived_tasks = experiment_manager.get_tasks()
+            # Check output
+            experiment_manager.monitor(t)
+            assert t.logs['err'].strip() == 'printing to stderr'
+            assert t.logs['out'].strip() == 'printing to stdout'
 
-    assert task_id not in [t.id for t in non_archived_tasks]
+            # Check status
+            assert t.status == TaskStatus.Finished
 
-    # 6. Check that it is present in the archived list
-    archived_tasks = experiment_manager.get_tasks(archived=True)
-    assert task_id in [t.id for t in archived_tasks]
+            # Check hyperparam search
+            p_exp10 = t.config['training']['dummy_param_exp10']
+            p_exp2 = t.config['training']['dummy_param_exp2']
+            p_lin = t.config['training']['dummy_param_lin']
+
+            # Hyperparam value must be unique
+            assert p_exp10 not in p_exp10_values
+            assert p_exp2 not in p_exp2_values
+            assert p_lin not in p_lin_values
+            p_exp10_values.add(p_exp10)
+            p_exp2_values.add(p_exp2)
+            p_lin_values.add(p_lin)
+
+            # Hyperparameter values must be in range
+            assert 10 ** -2 <= p_exp10 <= 10 ** 2
+            assert 2 ** -2 <= p_exp2 <= 2 ** 2
+            assert -2 <= p_lin <= 2
 
 
-def test_delete_local_task():
-    from hypertrainer.experimentmanager import experiment_manager
-    from hypertrainer.task import Task
+    def test_archive_task(self):
+        # 1. Submit local task
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'test_submit.yaml'),
+            platform='local')
+        task_id = tasks[0].id
 
-    def get_task_folder(task_id):
-        return Path(Task.get(Task.id == task_id).output_path)
+        # 2. Archive task
+        experiment_manager.archive_tasks_by_id([task_id])
 
-    # 1. Submit task
-    tasks = experiment_manager.create_tasks(
-        config_file=str(scripts_path / 'test_submit.yaml'),
-        platform='local')
-    task_id = tasks[0].id
-    # 1.1 Wait that the folder exist on disk
-    wait_true(lambda: get_task_folder(task_id).exists())
-    task_folder = get_task_folder(task_id)
-    # 2. Try deleting task (fails since not archived yet)
-    with pytest.raises(RuntimeError):
+        # 3. Check that it still exists
+        assert Task.select().where(Task.id == task_id).count() == 1
+
+        # 4. Check that is_archived == True
+        assert Task.get(Task.id == task_id).is_archived
+
+        # 5. Check that it is absent from the non-archived list
+        non_archived_tasks = experiment_manager.get_tasks()
+
+        assert task_id not in [t.id for t in non_archived_tasks]
+
+        # 6. Check that it is present in the archived list
+        archived_tasks = experiment_manager.get_tasks(archived=True)
+        assert task_id in [t.id for t in archived_tasks]
+
+
+    def test_delete_local_task(self):
+        def get_task_folder(task_id):
+            return Path(Task.get(Task.id == task_id).output_path)
+
+        # 1. Submit task
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'test_submit.yaml'),
+            platform='local')
+        task_id = tasks[0].id
+        # 1.1 Wait that the folder exist on disk
+        wait_true(lambda: get_task_folder(task_id).exists())
+        task_folder = get_task_folder(task_id)
+        # 2. Try deleting task (fails since not archived yet)
+        with pytest.raises(RuntimeError):
+            experiment_manager.delete_tasks_by_id([task_id])
+        # 3. Archive task
+        experiment_manager.archive_tasks_by_id([task_id])
+        assert Task.get(Task.id == task_id).is_archived
+        # 4. Delete task
         experiment_manager.delete_tasks_by_id([task_id])
-    # 3. Archive task
-    experiment_manager.archive_tasks_by_id([task_id])
-    assert Task.get(Task.id == task_id).is_archived
-    # 4. Delete task
-    experiment_manager.delete_tasks_by_id([task_id])
-    # 5. Check that task does not exist in DB
-    assert Task.select().where(Task.id == task_id).count() == 0
-    # 6. Check that files on disk have been deleted
-    wait_true(lambda: not task_folder.exists())
+        # 5. Check that task does not exist in DB
+        assert Task.select().where(Task.id == task_id).count() == 0
+        # 6. Check that files on disk have been deleted
+        wait_true(lambda: not task_folder.exists())
 
 
-def test_submit_rq_task():
-    ht_platform = HtPlatform(['localhost'])
-    experiment_manager.platform_instances[ComputePlatformType.HT] = ht_platform  # FIXME
+@pytest.fixture
+def ht_platform():
+    if ComputePlatformType.HT not in experiment_manager.platform_instances:
+        experiment_manager.platform_instances[ComputePlatformType.HT] = HtPlatform(['localhost'])
+
+    _ht_platform = experiment_manager.platform_instances[ComputePlatformType.HT]
     try:
-        answers = ht_platform.ping_workers()
+        answers = _ht_platform.ping_workers()
     except (ConnectionError, ConnectionRefusedError):
         raise Exception('Could not connect to Redis. Make sure redis-server is running.')
     except TimeoutError:
         raise Exception('The ping timed out. A worker must listen queue \'localhost\'')
     assert answers == ['localhost']
-
-    # 1. Submit rq task
-    tasks = experiment_manager.create_tasks(
-        config_file=str(scripts_path / 'test_submit.yaml'),
-        platform='htPlatform')
-    task_id = tasks[2].id
-
-    # 2. Check that the task finishes successfully
-    def check_finished():
-        experiment_manager.update_tasks()
-        status = Task.get(Task.id == task_id).status
-        return status == TaskStatus.Finished
-
-    wait_true(check_finished, interval_secs=2)
+    return _ht_platform
 
 
-# @pytest.mark.xfail
-# def test_delete_rq_task(client):
-#     # 1. Submit task
-#     # 2. Archive task
-#     # 3. Make sure task is archived
-#     # 4. Delete task
-#     # 5. Check that task does not exist in DB
-#     # 6. Check that files on disk have been deleted
-#     raise NotImplementedError
+class TestRq:
+    def test_submit_rq_task(self, ht_platform):
+        # 1. Submit rq task
+        tasks = experiment_manager.create_tasks(
+            platform='ht',
+            config_file=str(scripts_path / 'test_submit.yaml'))
+        task_id = tasks[2].id
+
+        # 2. Check that the task finishes successfully
+        wait_task_finished(task_id)
+
+    def test_delete_rq_task(self, ht_platform):
+        # Submit task
+        tasks = experiment_manager.create_tasks(
+            platform='ht',
+            config_file=str(scripts_path / 'simple.yaml'))
+        task_id = tasks[0].id
+
+        # Wait task finish
+        wait_task_finished(task_id)
+
+        # Try deleting task (fails since not archived yet)
+        with pytest.raises(RuntimeError):
+            experiment_manager.delete_tasks_by_id([task_id])
+
+        # Archive task
+        experiment_manager.archive_tasks_by_id([task_id])
+        task = Task.get(Task.id == task_id)
+        assert task.is_archived
+
+        # Check that the output path exists
+        assert Path(task.output_path).exists()
+
+        # Delete task
+        experiment_manager.delete_tasks_by_id([task_id])
+
+        # Check that task does not exist in DB
+        assert Task.select().where(Task.id == task_id).count() == 0
+
+        # Check that files on disk have been deleted
+        wait_true(lambda: not Path(task.output_path).exists())
 
 
 def wait_true(fn, interval_secs=1, tries=4):
@@ -216,3 +233,12 @@ def wait_true(fn, interval_secs=1, tries=4):
         else:
             sleep(interval_secs)
     raise TimeoutError
+
+
+def wait_task_finished(task_id):
+    def check_finished():
+        experiment_manager.update_tasks()
+        status = Task.get(Task.id == task_id).status
+        return status == TaskStatus.Finished
+
+    wait_true(check_finished, interval_secs=2)

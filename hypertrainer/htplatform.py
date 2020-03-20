@@ -7,7 +7,8 @@ from rq import Queue
 from rq.job import Job
 
 from hypertrainer.computeplatform import ComputePlatform
-from hypertrainer.utils import TaskStatus
+from hypertrainer.computeplatformtype import ComputePlatformType
+from hypertrainer.utils import TaskStatus, get_python_env_command
 from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception
 
 
@@ -25,12 +26,13 @@ class HtPlatform(ComputePlatform):
         self.worker_queues: Dict[str, Queue] = {h: Queue(name=h, connection=redis_conn) for h in self.worker_hostnames}
 
     def submit(self, task, resume=False):
+        output_path = Path(task.output_root) / str(task.uuid)
+        python_env_command = get_python_env_command(Path(task.project_path), ComputePlatformType.HT.value)
         job = self.jobs_queue.enqueue(run, job_timeout=-1, kwargs=dict(
-            task_uuid=str(task.uuid),
             script_file=Path(task.script_file),
+            output_path=output_path,
+            python_env_command=python_env_command,
             config_dump=task.dump_config(),
-            output_root_path=Path(task.output_root),
-            project_path=Path(task.project_path),
             resume=resume))
         # At this point, we only know the rq job id. No pid since the job might have to wait.
         return job.id

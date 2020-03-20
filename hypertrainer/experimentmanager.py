@@ -140,6 +140,8 @@ class ExperimentManager:
         if Task.select().where(Task.id.in_(task_ids) & (Task.is_archived == False)).count() > 0:
             raise RuntimeError('Only archived tasks can be deleted')
         for t in Task.select().where(Task.id.in_(task_ids)):
+            if not t.platform_type == ComputePlatformType.LOCAL:
+                raise NotImplementedError  # TODO delegate delete to platform
             print('Deleting', t.output_path)
             shutil.rmtree(t.output_path,
                           onerror=lambda function, path, excinfo: print('ERROR', function, path, excinfo))

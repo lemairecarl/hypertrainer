@@ -3,7 +3,7 @@ from enum import Enum
 
 class ComputePlatformType(Enum):
     LOCAL = 'local'
-    HT = 'htPlatform'
+    HT = 'ht'
     HELIOS = 'helios'
     GRAHAM = 'graham'
     BELUGA = 'beluga'

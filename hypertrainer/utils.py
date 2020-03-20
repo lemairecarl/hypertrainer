@@ -3,7 +3,7 @@ from enum import Enum
 from functools import reduce
 from itertools import chain
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, List
 
 from ruamel.yaml import YAML
 
@@ -90,3 +90,30 @@ class TaskStatus(Enum):
 
     def is_active(self):
         return self in self.active_states
+
+
+def get_python_env_command(project_path: Path, platform: str) -> List[str]:
+    """Get the command to use to invoke python.
+
+    The default is 'python', but this can be configured to use a conda env.
+    """
+
+    # TODO move this in common file (it's used by htplatform_worker.py)
+    default_interpreter = ['python']
+
+    env_config_file = project_path / 'env.yaml'
+    if not env_config_file.exists():
+        return default_interpreter
+
+    env_configs = yaml.load(env_config_file)
+    if env_configs is None or platform not in env_configs:
+        return default_interpreter
+
+    env_config = env_configs[platform]
+    if env_config['conda']:
+        if 'path' in env_config:
+            return [env_config['conda_bin'], 'run', '-p', env_config['path'], 'python']
+        else:
+            return [env_config['conda_bin'], 'run', '-n', env_config['name'], 'python']
+    else:
+        return [env_config['path'] + '/bin/python']
