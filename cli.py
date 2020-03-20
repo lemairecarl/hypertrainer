@@ -77,4 +77,5 @@ if __name__ == '__main__':
     ]
     ipython_config = Config()
     ipython_config.TerminalIPythonApp.exec_lines = exec_lines
+    ipython_config.TerminalIPythonApp.display_banner = False
     start_ipython(config=ipython_config, user_ns=namespace)
