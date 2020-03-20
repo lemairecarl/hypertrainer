@@ -42,3 +42,11 @@ class ComputePlatform(ABC):
         Returns nothing.
         """
         pass
+
+    @abstractmethod
+    def delete(self, task):
+        """Delete all data associated to the task.
+
+        This must remove the task from any database, and delete the output folder of the task.
+        """
+        pass

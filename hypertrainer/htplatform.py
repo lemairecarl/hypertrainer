@@ -9,7 +9,7 @@ from rq.job import Job
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.utils import TaskStatus, get_python_env_command
-from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception
+from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception, delete_path
 
 
 class HtPlatform(ComputePlatform):
@@ -66,6 +66,9 @@ class HtPlatform(ComputePlatform):
                 t.status = TaskStatus(job_info['status'])
                 t.output_path = job_info['output_path']
                 t.hostname = hostname
+
+    def delete(self, task):
+        self.worker_queues[task.hostname].enqueue(delete_path, args=(task.output_path,), ttl=4)
 
     def _get_info_dict_for_each_worker(self):
         rq_jobs = [q.enqueue(get_jobs_info, ttl=2, result_ttl=2) for q in self.worker_queues.values()]

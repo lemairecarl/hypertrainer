@@ -1,4 +1,5 @@
 import os
+import shutil
 import signal
 import subprocess
 from pathlib import Path
@@ -63,6 +64,11 @@ class LocalPlatform(ComputePlatform):
                     t.status = TaskStatus.Finished
                 else:
                     t.status = TaskStatus.Crashed
+
+    def delete(self, task):
+        print('Deleting', task.output_path)
+        shutil.rmtree(task.output_path,
+                      onerror=lambda function, path, excinfo: print('ERROR', function, path, excinfo))
 
     @staticmethod
     def _make_job_path(task):

@@ -1,11 +1,11 @@
 import os
-import shutil
 import uuid
 from pathlib import Path
 from typing import Iterable, Optional, List
 
 from tabulate import tabulate
 
+from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.hpsearch import generate as generate_hpsearch
 from hypertrainer.htplatform import HtPlatform
@@ -137,20 +137,25 @@ class ExperimentManager:
         Task.update(is_archived=True).where(Task.id.in_(task_ids)).execute()
 
     def delete_tasks_by_id(self, task_ids: List[int]):
+        """Delete all traces of the task.
+
+        This method deletes the task from the server database and the worker database. It also deletes the output path.
+        """
+
         if Task.select().where(Task.id.in_(task_ids) & (Task.is_archived == False)).count() > 0:
             raise RuntimeError('Only archived tasks can be deleted')
+
+        # Ask the platform to delete each task (on the corresponding worker)
         for t in Task.select().where(Task.id.in_(task_ids)):
-            if not t.platform_type == ComputePlatformType.LOCAL:
-                raise NotImplementedError  # TODO delegate delete to platform
-            print('Deleting', t.output_path)
-            shutil.rmtree(t.output_path,
-                          onerror=lambda function, path, excinfo: print('ERROR', function, path, excinfo))
+            self.get_platform(t).delete(t)
+
+        # Delete the task from the server database
         Task.delete().where(Task.id.in_(task_ids)).execute()
 
     def list_projects(self):
         return [t.project for t in Task.select(Task.project).where(Task.project != '').distinct()]
 
-    def get_platform(self, task: Task):
+    def get_platform(self, task: Task) -> ComputePlatform:
         try:
             return self.platform_instances[task.platform_type]
         except KeyError:

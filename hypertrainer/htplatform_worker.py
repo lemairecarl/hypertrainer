@@ -1,4 +1,5 @@
 import pickle
+import shutil
 import subprocess
 from pathlib import Path
 from time import sleep
@@ -57,8 +58,7 @@ def run(
 
 
 def get_logs(task_id):
-    # TODO
-    return {}
+    raise NotImplementedError
     job_path = _get_job_path(task_id)
     logs = {}
     patterns = ('*.log', '*.txt')
@@ -67,6 +67,12 @@ def get_logs(task_id):
             p = Path(f)
             logs[p.stem] = p.read_text()
     return logs
+
+
+def delete_path(path):
+    print('Deleting', path)
+    shutil.rmtree(path,
+                  onerror=lambda function, path, excinfo: print('ERROR', function, path, excinfo))
 
 
 def ping(msg):
