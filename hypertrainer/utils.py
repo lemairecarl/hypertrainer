@@ -1,4 +1,5 @@
 import io
+import sys
 from enum import Enum
 from functools import reduce
 from itertools import chain
@@ -44,6 +45,10 @@ def yaml_to_str(obj):
     with io.StringIO() as stream:
         yaml.dump(obj, stream)
         return stream.getvalue()
+
+
+def print_yaml(obj):
+    yaml.dump(obj, sys.stdout)
 
 
 def join_dicts(dicts: Iterable[dict]):

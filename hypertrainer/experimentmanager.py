@@ -1,4 +1,5 @@
 import os
+import sys
 import uuid
 from pathlib import Path
 from typing import Iterable, Optional, List
@@ -12,7 +13,7 @@ from hypertrainer.htplatform import HtPlatform
 from hypertrainer.localplatform import LocalPlatform
 from hypertrainer.slurmplatform import SlurmPlatform
 from hypertrainer.task import Task
-from hypertrainer.utils import yaml
+from hypertrainer.utils import yaml, print_yaml
 
 
 class ExperimentManager:
@@ -79,6 +80,8 @@ class ExperimentManager:
             Task.bulk_update(tasks, Task.get_fields())  # FIXME updating all records everytime is heavy
 
     def create_tasks(self, platform: str, config_file: str, project: str = ''):
+        """Create and submit tasks to the specified platform according to the config yaml file"""
+
         # Load yaml config
         config_file_path = Path(config_file)
         yaml_config = yaml.load(config_file_path)
@@ -103,17 +106,24 @@ class ExperimentManager:
             tasks.append(t)
         # Submit tasks
         for t in tasks:
-            self.submit_task(t)  # TODO submit in batch to server!
+            self._submit_task(t)  # TODO submit in batch to server!
         return tasks
 
-    def submit_task(self, task: Task):
+    def _submit_task(self, task: Task):
         task.job_id = self.get_platform(task).submit(task)
         task.post_submit()
 
     def get_tasks_by_id(self, task_ids: List[int]):
+        """Get the tasks records from the db"""
+
         return list(Task.select().where(Task.id.in_(task_ids)))
 
     def resume_tasks(self, tasks: Iterable[Task]):
+        """Resume the non-active tasks.
+
+        Resume the tasks from where they left off, if possible.
+        """
+
         for t in tasks:
             if not t.status.is_active():
                 t.job_id = self.get_platform(t).submit(t, resume=True)  # TODO one bulk ssh command
@@ -126,6 +136,11 @@ class ExperimentManager:
                 t.post_cancel()
 
     def cancel_tasks_by_id(self, task_ids: List[int]):
+        """Cancel the tasks
+
+        Stop the execution of the tasks.
+        """
+
         self.cancel_tasks(self.get_tasks_by_id(task_ids))
 
     def monitor(self, t: Task):
@@ -134,10 +149,15 @@ class ExperimentManager:
         t.interpret_logs()
 
     def archive_tasks_by_id(self, task_ids: List[int]):
+        """Archive the tasks
+
+        Remove the tasks from the main list, but keep all their data (in db and on disk)
+        """
+
         Task.update(is_archived=True).where(Task.id.in_(task_ids)).execute()
 
     def delete_tasks_by_id(self, task_ids: List[int]):
-        """Delete all traces of the task.
+        """Delete all traces of the tasks
 
         This method deletes the task from the server database and the worker database. It also deletes the output path.
         """
@@ -174,7 +194,8 @@ class ExperimentManager:
             return list(self.platform_instances.keys())
 
     def print_tasks(self, **kwargs):
-        """Print tasks list"""
+        """Print a table of the non-archived tasks"""
+
         tasks = self.get_tasks(descending_order=False, **kwargs)
         table = [[t.id,
                   #t.uuid,
@@ -193,6 +214,12 @@ class ExperimentManager:
             'Stat'
         ]
         print(tabulate(table, headers=headers))
+
+    def print_task_config(self, task_id):
+        """Print the task's config yaml"""
+
+        t = self.get_tasks_by_id([task_id])[0]
+        print_yaml(t.config)
 
 
 experiment_manager = ExperimentManager()
