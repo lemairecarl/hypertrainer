@@ -4,5 +4,4 @@ n_iter: 1
 secs_per_iter: 1
 
 training:
-  output_path: dummy
   num_epochs: 10
