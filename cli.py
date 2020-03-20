@@ -18,12 +18,12 @@ def print_help():
 
 
 def by_id_helper(f, squeeze_returned_list=False):
-    squeeze_returned_list_doc = 'If the returned list has length 1, the element is returned instead.\n\n'
+    squeeze_returned_list_doc = 'If the returned list has length 1, the element is returned instead.'
 
     def _f(int_or_iterable: Union[int, Iterable], *more_ints):
-        """Wrapper on {f} for more flexible arguments.
+        """{d}
 
-        {r}Examples:
+        Examples:
             {f}(1)         # Single int
             {f}(1, 3, 2)   # Multiple ints
             {f}(range(4))  # Iterable
@@ -42,22 +42,23 @@ def by_id_helper(f, squeeze_returned_list=False):
             return_val = return_val[0]
         return return_val
     _f.__name__ = f.__name__
-    _f.__doc__ = str(_f.__doc__).format(
-        f=f.__name__,
-        r=squeeze_returned_list_doc if squeeze_returned_list else '')
+    desc = f.__doc__.strip()
+    if squeeze_returned_list:
+        desc += '\n\n' + squeeze_returned_list_doc
+    _f.__doc__ = str(_f.__doc__).format(d=desc, f=f.__name__)
     return _f
 
 
 commands = {
     'create': em.create_tasks,
     'show': em.print_tasks,
-    #'get_tasks': em.get_tasks,
     'get': by_id_helper(em.get_tasks_by_id, squeeze_returned_list=True),
     'config': em.print_task_config,
     'out': em.print_output,
     'archive': by_id_helper(em.archive_tasks_by_id),
     'delete': by_id_helper(em.delete_tasks_by_id),
-    'cancel': by_id_helper(em.cancel_tasks_by_id)
+    'cancel': by_id_helper(em.cancel_tasks_by_id),
+    'resume': by_id_helper(em.resume_tasks_by_id)
 }
 symbols = [
     'em',

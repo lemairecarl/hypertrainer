@@ -124,13 +124,23 @@ class ExperimentManager:
 
         Resume the tasks from where they left off, if possible.
         """
-
         for t in tasks:
             if not t.status.is_active():
                 t.job_id = self.get_platform(t).submit(t, resume=True)  # TODO one bulk ssh command
                 t.post_resume()
 
+    def resume_tasks_by_id(self, task_ids: List[int]):
+        """Resume the non-active tasks.
+
+        Resume the tasks from where they left off, if possible.
+        """
+        self.resume_tasks(self.get_tasks_by_id(task_ids))
+
     def cancel_tasks(self, tasks: Iterable[Task]):
+        """Cancel the tasks
+
+        Stop the execution of the tasks.
+        """
         for t in tasks:
             if t.status.is_active():
                 self.get_platform(t).cancel(t)  # TODO one bulk ssh command
@@ -141,7 +151,6 @@ class ExperimentManager:
 
         Stop the execution of the tasks.
         """
-
         self.cancel_tasks(self.get_tasks_by_id(task_ids))
 
     def monitor(self, t: Task):
@@ -199,7 +208,6 @@ class ExperimentManager:
 
         tasks = self.get_tasks(descending_order=False, **kwargs)
         table = [[t.id,
-                  #t.uuid,
                   t.job_id,
                   t.hostname,
                   t.platform_type.abbrev,
@@ -207,7 +215,6 @@ class ExperimentManager:
                   t.status.abbrev] for t in tasks]
         headers = [
             'ID',
-            #'UUID',
             'JobID',
             'Hostname',
             'Platf',
