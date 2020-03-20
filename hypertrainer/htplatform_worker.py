@@ -58,15 +58,15 @@ def run(
         sleep(monitor_interval)
 
 
-def get_logs(task_id):
-    raise NotImplementedError
-    job_path = _get_job_path(task_id)
+def get_logs(job_id):
+    with local_db_context() as db:
+        output_path = db[job_id]['output_path']
     logs = {}
     patterns = ('*.log', '*.txt')
     for pattern in patterns:
-        for f in job_path.glob(pattern):
-            p = Path(f)
-            logs[p.stem] = p.read_text()
+        for matched_file_path in Path(output_path).glob(pattern):
+            log_name = matched_file_path.stem
+            logs[log_name] = matched_file_path.read_text()
     return logs
 
 
@@ -86,7 +86,9 @@ def raise_exception(exc_type):
 
 
 def get_jobs_info():
-    return _get_db_contents()
+    with local_db_context() as db:
+        jobs_info = db
+    return jobs_info
 
 
 def _check_init_db():
@@ -116,13 +118,6 @@ def _update_job(job_id: str, data: dict):
 def _delete_job(job_id: str):
     with local_db_context() as db:
         del db[job_id]
-
-
-def _get_db_contents():
-    _check_init_db()
-    with local_db.open('rb') as f:
-        db = pickle.load(f)
-    return db
 
 
 def test_job(msg: str):
