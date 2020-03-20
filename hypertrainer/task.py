@@ -74,19 +74,12 @@ class Task(BaseModel):
 
     @property
     def output_path(self) -> str:
-        if 'training' in self.config and 'output_path' in self.config['training']:  # FIXME
-            return get_item_at_path(self.config, 'training.output_path')
-        else:
-            return self.config['output_path']
+        return self.config['output_path']
 
     @output_path.setter
     def output_path(self, path: str):
-        self.config: dict  # For helps pycharm inspection
-
-        if 'training' in self.config and 'output_path' in self.config['training']:  # FIXME
-            set_item_at_path(self.config, 'training.output_path', path)
-        else:
-            self.config['output_path'] = path
+        self.config: dict  # Corrects Pycharm inspection
+        self.config['output_path'] = path
         self.save()
 
     @property

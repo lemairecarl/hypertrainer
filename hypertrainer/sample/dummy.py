@@ -22,7 +22,7 @@ args = ap.parse_args()
 
 # Config
 config = yaml.load(Path(args.file))
-output_path = Path(config['training']['output_path'])
+output_path = Path(config['output_path'])
 iterations_log = output_path / 'progress.log'
 loss_log = output_path / 'metric_loss.log'
 n_epochs = config['training'].get('num_epochs', 1)
