@@ -132,12 +132,12 @@ class TestLocal:
         assert Task.get(Task.id == task_id).is_archived
 
         # 5. Check that it is absent from the non-archived list
-        non_archived_tasks = experiment_manager.get_tasks()
+        non_archived_tasks = experiment_manager.get_tasks(platform=ComputePlatformType.LOCAL)
 
         assert task_id not in [t.id for t in non_archived_tasks]
 
         # 6. Check that it is present in the archived list
-        archived_tasks = experiment_manager.get_tasks(archived=True)
+        archived_tasks = experiment_manager.get_tasks(archived=True, platform=ComputePlatformType.LOCAL)
         assert task_id in [t.id for t in archived_tasks]
 
 
