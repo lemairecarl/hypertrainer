@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import List, Iterable, Dict
 
 from redis import Redis
+import redis.exceptions
 from rq import Queue
 from rq.job import Job
 
@@ -10,6 +11,16 @@ from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.utils import TaskStatus, get_python_env_command
 from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception, delete_job
+
+
+def check_connection(redis_conn):
+    try:
+        redis_conn.ping()
+    except redis.exceptions.ConnectionError as e:
+        msg = e.args[0]
+        msg += '\nPlease make sure redis-server is running, and accessible.'
+        e.args = (msg,) + e.args[1:]
+        raise e
 
 
 class HtPlatform(ComputePlatform):
@@ -22,6 +33,8 @@ class HtPlatform(ComputePlatform):
         self.worker_hostnames = worker_hostnames
 
         redis_conn = Redis(port=6380)  # FIXME config
+        check_connection(redis_conn)
+
         self.jobs_queue = Queue(name='jobs', connection=redis_conn)
         self.worker_queues: Dict[str, Queue] = {h: Queue(name=h, connection=redis_conn) for h in self.worker_hostnames}
 
