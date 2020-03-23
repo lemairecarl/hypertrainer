@@ -27,6 +27,7 @@ class HtPlatform(ComputePlatform):
 
     def submit(self, task, resume=False):
         output_path = Path(task.output_root) / str(task.uuid)
+        task.output_path = str(output_path)
         python_env_command = get_python_env_command(Path(task.project_path), ComputePlatformType.HT.value)
         job = self.jobs_queue.enqueue(run, job_timeout=-1, kwargs=dict(
             script_file=Path(task.script_file),

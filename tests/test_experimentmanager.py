@@ -4,22 +4,21 @@ from time import sleep
 
 import pytest
 
-from hypertrainer.computeplatformtype import ComputePlatformType
-from hypertrainer.db import init_db
+# Trick for initializing a test database
+import hypertrainer.utils
+hypertrainer.utils.test_mode = True
+
+from hypertrainer.utils import TaskStatus, yaml, deep_assert_equal
 from hypertrainer.experimentmanager import experiment_manager
+from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.htplatform import HtPlatform
 from hypertrainer.task import Task
-from hypertrainer.utils import TaskStatus, yaml
-from hypertrainer.utils import deep_assert_equal
 
 scripts_path = Path(__file__).parent / 'scripts'
 
 
-def test_init_db():
-    init_db()  # TODO side effect... put in fixture?
-    Task.delete().execute()  # FIXME
-
-    assert Task.select().count() == 0
+# Make sure we will work on a separate, empty test database
+assert Task.select().count() == 0, 'Must work on empty test db'
 
 
 class TestLocal:

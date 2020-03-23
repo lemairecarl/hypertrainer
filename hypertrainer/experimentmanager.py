@@ -1,5 +1,4 @@
 import os
-import sys
 import uuid
 from pathlib import Path
 from typing import Iterable, Optional, List
@@ -9,12 +8,12 @@ from termcolor import colored
 
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
+from hypertrainer.db import init_db
 from hypertrainer.hpsearch import generate as generate_hpsearch
 from hypertrainer.htplatform import HtPlatform
 from hypertrainer.localplatform import LocalPlatform
-from hypertrainer.slurmplatform import SlurmPlatform
 from hypertrainer.task import Task
-from hypertrainer.utils import yaml, print_yaml
+from hypertrainer.utils import yaml, print_yaml, TaskStatus
 
 
 class ExperimentManager:
@@ -26,6 +25,8 @@ class ExperimentManager:
         if ExperimentManager._instantiated:
             raise Exception('ExperimentManager should not be instantiated manually. Use experiment_manager.')
         ExperimentManager._instantiated = True
+
+        init_db()
 
         # TODO initialize from config yaml instead of env vars
         # Instantiate ComputePlatform's if available

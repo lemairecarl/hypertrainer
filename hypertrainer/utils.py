@@ -8,6 +8,7 @@ from typing import Iterable, List
 
 from ruamel.yaml import YAML
 
+test_mode = False
 yaml = YAML()
 
 

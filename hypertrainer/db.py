@@ -1,15 +1,21 @@
+from pathlib import Path
+
 from peewee import SqliteDatabase, Model, Field
 
-from hypertrainer.utils import yaml, yaml_to_str, hypertrainer_home
-
-db_file = hypertrainer_home / 'db.sqlite'
-database = SqliteDatabase(str(db_file))
+from hypertrainer.utils import yaml, yaml_to_str, hypertrainer_home, test_mode
 
 
-def init_db():
-    from hypertrainer.task import Task
+if test_mode:
+    db_file = Path('/tmp/dummy_ht_db.sqlite')
+    try:
+        db_file.unlink()
+    except IOError:
+        pass
 
-    database.create_tables([Task])
+    database = SqliteDatabase(str(db_file))
+else:
+    db_file = hypertrainer_home / 'db.sqlite'
+    database = SqliteDatabase(str(db_file))
 
 
 class BaseModel(Model):
@@ -36,3 +42,9 @@ class YamlField(Field):
 
     def python_value(self, value):
         return yaml.load(value)
+
+
+def init_db():
+    from hypertrainer.task import Task
+
+    database.create_tables([Task])
