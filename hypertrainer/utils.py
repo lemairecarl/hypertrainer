@@ -97,6 +97,9 @@ class TaskStatus(Enum):
     def is_active(self):
         return self in self.active_states
 
+    def __str__(self):
+        return self.value
+
 
 def get_python_env_command(project_path: Path, platform: str) -> List[str]:
     """Get the command to use to invoke python.

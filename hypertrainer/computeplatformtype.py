@@ -14,3 +14,6 @@ class ComputePlatformType(Enum):
             return 'ht'
         else:
             return self.value
+
+    def __str__(self):
+        return self.value

@@ -1,3 +1,4 @@
+import csv
 import os
 import uuid
 from pathlib import Path
@@ -243,6 +244,24 @@ class ExperimentManager:
         print(colored('--- Begin log `err` ---', attrs=['bold']))
         print(logs.get('err', '`err` log does not exist'))
         print(colored('--- End log `err` -----', attrs=['bold']))
+
+    def export_csv(self, filename):
+        """Export the Task database as csv"""
+
+        filepath = Path(filename)
+        if filepath.exists():
+            raise FileExistsError
+
+        with filepath.open('w', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)  #  quotechar='|', quoting=csv.QUOTE_MINIMAL)
+
+            # Write header
+            field_names = next(Task.select().dicts().iterator()).keys()
+            csv_writer.writerow(field_names)
+
+            # Write data
+            for task_tuple in Task.select().tuples().iterator():
+                csv_writer.writerow(task_tuple)
 
 
 experiment_manager = ExperimentManager()
