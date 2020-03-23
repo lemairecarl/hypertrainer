@@ -21,6 +21,20 @@ scripts_path = Path(__file__).parent / 'scripts'
 assert Task.select().count() == 0, 'Must work on empty test db'
 
 
+def test_export_yaml():
+    experiment_manager.create_tasks(
+        config_file=str(scripts_path / 'test_submit.yaml'),
+        platform='local')
+
+    tmpfile = Path('/tmp/httest.yaml')
+    if tmpfile.exists():
+        tmpfile.unlink()
+
+    experiment_manager.export_yaml(str(tmpfile))
+
+    # TODO perform more checks
+
+
 class TestLocal:
     def test_local_output_path(self):
         tasks = experiment_manager.create_tasks(

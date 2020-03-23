@@ -5,13 +5,16 @@ from functools import reduce
 from itertools import chain
 from pathlib import Path
 from typing import Iterable, List
+from uuid import UUID
 
-from ruamel.yaml import YAML
+from ruamel.yaml import YAML, StringIO, Dumper
 
 test_mode = False
+
+
 yaml = YAML()
-
-
+yaml.representer.add_representer(UUID, lambda dumper, uuid: dumper.represent_data(str(uuid)))
+yaml.representer.add_multi_representer(Enum, lambda dumper, enum: dumper.represent_data(str(enum)))
 hypertrainer_home = Path.home() / 'hypertrainer'
 
 
@@ -43,9 +46,10 @@ def parse_columns(data):
 
 
 def yaml_to_str(obj):
-    with io.StringIO() as stream:
-        yaml.dump(obj, stream)
-        return stream.getvalue()
+    # with io.StringIO() as stream:
+    stream = StringIO()
+    yaml.dump(obj, stream)
+    return stream.getvalue()
 
 
 def print_yaml(obj):

@@ -14,7 +14,7 @@ from hypertrainer.hpsearch import generate as generate_hpsearch
 from hypertrainer.htplatform import HtPlatform
 from hypertrainer.localplatform import LocalPlatform
 from hypertrainer.task import Task
-from hypertrainer.utils import yaml, print_yaml, TaskStatus
+from hypertrainer.utils import yaml, print_yaml
 
 
 class ExperimentManager:
@@ -253,7 +253,7 @@ class ExperimentManager:
             raise FileExistsError
 
         with filepath.open('w', newline='') as csvfile:
-            csv_writer = csv.writer(csvfile)  #  quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            csv_writer = csv.writer(csvfile)
 
             # Write header
             field_names = next(Task.select().dicts().iterator()).keys()
@@ -262,6 +262,18 @@ class ExperimentManager:
             # Write data
             for task_tuple in Task.select().tuples().iterator():
                 csv_writer.writerow(task_tuple)
+
+    def export_yaml(self, filename):
+        """Export the Task database as yaml"""
+
+        filepath = Path(filename)
+        if filepath.exists():
+            raise FileExistsError
+
+        task_dicts = list(Task.select().dicts())  # TODO write on the fly instead?
+
+        with filepath.open('w') as f:
+            yaml.dump(task_dicts, f)
 
 
 experiment_manager = ExperimentManager()

@@ -59,7 +59,8 @@ commands = {
     'delete': by_id_helper(em.delete_tasks_by_id),
     'cancel': by_id_helper(em.cancel_tasks_by_id),
     'resume': by_id_helper(em.resume_tasks_by_id),
-    'export_csv': em.export_csv
+    'export_csv': em.export_csv,
+    'export_yaml': em.export_yaml
 }
 symbols = [
     'em',
