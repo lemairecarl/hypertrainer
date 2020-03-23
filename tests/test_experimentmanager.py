@@ -90,7 +90,7 @@ class TestLocal:
             status = Task.get(Task.id == tasks[2].id).status
             return status == TaskStatus.Finished
 
-        wait_true(check_finished, interval_secs=2)
+        wait_true(check_finished, interval_secs=0.5)
 
         # 3. Check stuff on each task
         p_exp10_values, p_exp2_values, p_lin_values = set(), set(), set()
@@ -198,14 +198,16 @@ def ht_platform():
 
 class TestRq:
     def test_submit_rq_task(self, ht_platform):
-        # 1. Submit rq task
+        # Submit rq task
         tasks = experiment_manager.create_tasks(
             platform='ht',
             config_file=str(scripts_path / 'test_submit.yaml'))
-        task_id = tasks[2].id
 
-        # 2. Check that the task finishes successfully
-        wait_task_finished(task_id)
+        # Check that the task has status Waiting
+        assert tasks[0].status == TaskStatus.Waiting
+
+        # Check that the task finishes successfully
+        wait_task_finished(tasks[2].id, interval_secs=2, tries=6)
 
     def test_delete_rq_task(self, ht_platform):
         # Submit task
@@ -215,7 +217,7 @@ class TestRq:
         task_id = tasks[0].id
 
         # Wait task finish
-        wait_task_finished(task_id)
+        wait_task_finished(task_id, interval_secs=2, tries=3)
 
         # Try deleting task (fails since not archived yet)
         with pytest.raises(RuntimeError):
@@ -245,7 +247,7 @@ class TestRq:
         assert task.job_id not in worker_db
 
 
-def wait_true(fn, interval_secs=1, tries=4):
+def wait_true(fn, interval_secs=0.4, tries=6):
     for i in range(tries):
         if fn():
             return
@@ -254,10 +256,10 @@ def wait_true(fn, interval_secs=1, tries=4):
     raise TimeoutError
 
 
-def wait_task_finished(task_id):
+def wait_task_finished(task_id, interval_secs=0.4, tries=6):
     def check_finished():
         experiment_manager.update_tasks()
         status = Task.get(Task.id == task_id).status
         return status == TaskStatus.Finished
 
-    wait_true(check_finished, interval_secs=2)
+    wait_true(check_finished, interval_secs=interval_secs, tries=tries)

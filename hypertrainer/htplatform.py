@@ -55,7 +55,7 @@ class HtPlatform(ComputePlatform):
         if task.hostname == '':  # The job hasn't been consumed yet
             return {}
         rq_job = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.job_id,), ttl=2, result_ttl=2)
-        logs = wait_for_result(rq_job, timeout=2)
+        logs = wait_for_result(rq_job)
         return logs
 
     def cancel(self, task):
@@ -65,51 +65,66 @@ class HtPlatform(ComputePlatform):
         # TODO only check requested ids
 
         for t in tasks:
-            t.status = TaskStatus.Lost
+            if not t.status == TaskStatus.Waiting and t.status.is_active():
+                t.status = TaskStatus.Lost
         job_id_to_task = {t.job_id: t for t in tasks}
-        found_jobs = 0
 
         info_dicts = self._get_info_dict_for_each_worker()
         for hostname, local_db in zip(self.worker_hostnames, info_dicts):
+            if local_db is None:
+                continue
             for job_id in set(local_db.keys()).intersection(job_id_to_task.keys()):
-                found_jobs += 1
-
-                job_info = local_db[job_id]
                 t = job_id_to_task[job_id]
+                if not t.status.is_active():
+                    continue  # Do not update task if inactive, e.g. Finished
+                job_info = local_db[job_id]
 
                 t.status = TaskStatus(job_info['status'])
                 t.output_path = job_info['output_path']
                 t.hostname = hostname
 
     def delete(self, task):
+        if task.hostname == '':
+            print(f'Cannot perform worker deletion for {task.uuid}: no assigned worker hostname')
+            return
         self.worker_queues[task.hostname].enqueue(delete_job, args=(task.job_id, task.output_path), ttl=4)
 
     def _get_info_dict_for_each_worker(self):
         rq_jobs = [q.enqueue(get_jobs_info, ttl=2, result_ttl=2) for q in self.worker_queues.values()]
-        results = wait_for_results(rq_jobs, wait_secs=1)
+        results = wait_for_results(rq_jobs, raise_exc=False)
         return results
 
     def ping_workers(self):
         rq_jobs = [q.enqueue(ping, ttl=2, result_ttl=2, args=(h,)) for h, q in self.worker_queues.items()]
-        results = wait_for_results(rq_jobs, wait_secs=1)
+        results = wait_for_results(rq_jobs)
         return results
 
     def raise_exception_in_worker(self, exc_type, queue_name):
         self.worker_queues[queue_name].enqueue(raise_exception, ttl=2, result_ttl=2, args=(exc_type,))
 
 
-def wait_for_result(rq_job: Job, timeout):
-    time.sleep(timeout)
-    if rq_job.result is None:
+def wait_for_result(rq_job: Job, interval_secs=1, tries=4, raise_exc=True):
+    for i in range(tries):
+        if rq_job.result is not None:
+            return rq_job.result
+        else:
+            time.sleep(interval_secs)
+    if raise_exc:
         raise TimeoutError
-    return rq_job.result
+    return None
 
 
-def wait_for_results(rq_jobs: Iterable[Job], wait_secs):
-    time.sleep(wait_secs)
-    results = [j.result for j in rq_jobs]
-    if any(r is None for r in results):
+def wait_for_results(rq_jobs: Iterable[Job], interval_secs=1, tries=4, raise_exc=True):
+    assert tries >= 1
+    for i in range(tries):
+        results = [j.result for j in rq_jobs]
+        if any(r is None for r in results):
+            time.sleep(interval_secs)
+        else:
+            return results
+    if raise_exc:
         raise TimeoutError
+    # noinspection PyUnboundLocalVariable
     return results
 
 

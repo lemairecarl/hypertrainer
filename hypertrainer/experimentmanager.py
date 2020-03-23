@@ -14,7 +14,7 @@ from hypertrainer.hpsearch import generate as generate_hpsearch
 from hypertrainer.htplatform import HtPlatform
 from hypertrainer.localplatform import LocalPlatform
 from hypertrainer.task import Task
-from hypertrainer.utils import yaml, print_yaml
+from hypertrainer.utils import yaml, print_yaml, TaskStatus
 
 
 class ExperimentManager:
@@ -104,7 +104,8 @@ class ExperimentManager:
                      config=config,
                      name=name,
                      platform_type=ptype,
-                     project=project)
+                     project=project,
+                     status=TaskStatus.Waiting)
             t.save()  # insert in database
             tasks.append(t)
         # Submit tasks
