@@ -5,10 +5,9 @@ from time import sleep
 import pytest
 
 # Trick for initializing a test database
-import hypertrainer.utils
-hypertrainer.utils.test_mode = True
+from hypertrainer.utils import TaskStatus, yaml, deep_assert_equal, TestState
+TestState.test_mode = True
 
-from hypertrainer.utils import TaskStatus, yaml, deep_assert_equal
 from hypertrainer.experimentmanager import experiment_manager
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.htplatform import HtPlatform

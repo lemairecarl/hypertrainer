@@ -2,10 +2,10 @@ from pathlib import Path
 
 from peewee import SqliteDatabase, Model, Field
 
-from hypertrainer.utils import yaml, yaml_to_str, hypertrainer_home, test_mode
+from hypertrainer.utils import yaml, yaml_to_str, hypertrainer_home, TestState
 
 
-if test_mode:
+if TestState.test_mode:
     db_file = Path('/tmp/dummy_ht_db.sqlite')
     try:
         db_file.unlink()

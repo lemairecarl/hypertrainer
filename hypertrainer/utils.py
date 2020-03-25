@@ -7,9 +7,12 @@ from pathlib import Path
 from typing import Iterable, List
 from uuid import UUID
 
-from ruamel.yaml import YAML, StringIO, Dumper
+from ruamel.yaml import YAML, StringIO
 
-test_mode = False
+
+class TestState:
+    test_mode = False
+    data = None
 
 
 yaml = YAML()
