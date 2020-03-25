@@ -75,7 +75,7 @@ class HtPlatform(ComputePlatform):
                 continue
             for job_id in set(local_db.keys()).intersection(job_id_to_task.keys()):
                 t = job_id_to_task[job_id]
-                if not t.status.is_active():
+                if not t.status.is_active() and not t.status == TaskStatus.Lost:
                     continue  # Do not update task if inactive, e.g. Finished
                 job_info = local_db[job_id]
 
