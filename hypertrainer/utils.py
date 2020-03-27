@@ -1,10 +1,12 @@
-import io
+import fcntl
+import os
 import sys
+import time
 from enum import Enum
 from functools import reduce
 from itertools import chain
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Dict
 from uuid import UUID
 
 from ruamel.yaml import YAML, StringIO
@@ -146,3 +148,87 @@ def get_python_env_command(project_path: Path, platform: str) -> List[str]:
             return [env_config['conda_bin'], 'run', '-n', env_config['name'], 'python']
     else:
         return [env_config['path'] + '/bin/python']
+
+
+class LockedError(Exception):
+    pass
+
+
+class PidFile(object):
+    """Adapted from github.com/trbs/pid"""
+
+    def __init__(self, path: Path):
+        self.path: Path = path
+        self.pidfile = None
+
+    def try_acquire(self):
+        try:
+            self.__enter__()
+            return True
+        except LockedError:
+            return False
+
+    def release(self):
+        return self.__exit__()
+
+    def __enter__(self):
+        self.pidfile = self.path.open("a+")
+        try:
+            fcntl.flock(self.pidfile.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except IOError:
+            raise LockedError
+        self.pidfile.seek(0)
+        self.pidfile.truncate()
+        self.pidfile.write(str(os.getpid()))
+        self.pidfile.flush()
+        self.pidfile.seek(0)
+        return self
+
+    def __exit__(self, exc_type=None, exc_value=None, exc_tb=None):
+        try:
+            self.pidfile.close()
+        except IOError as err:
+            # ok if file was just closed elsewhere
+            if err.errno != 9:
+                raise
+        self.pidfile = None
+        self.path.unlink()
+
+    @property
+    def is_locked(self):
+        return self.pidfile is not None
+
+
+class GpuLock(PidFile):
+    def __init__(self, gpu_id):
+        self.gpu_id = gpu_id
+        self.path = hypertrainer_home / f'gpu_{gpu_id}.lock'
+        super().__init__(self.path)
+
+
+class GpuLockManager:
+    def __init__(self):
+        self.locks: Dict[str, GpuLock] = {}
+
+        cuda_visible_devices_var = os.environ.get('CUDA_VISIBLE_DEVICES', None)
+        if cuda_visible_devices_var not in ('', None):
+            visible_devices = cuda_visible_devices_var.split(',')
+            self.locks = [GpuLock(gpu_id) for gpu_id in visible_devices]
+
+    def num_free_gpus(self) -> int:
+        return sum(1 for lock in self.locks if not lock.is_locked)
+
+    def acquire_one_gpu(self) -> GpuLock:
+        """Wait for a gpu to be available, acquire it and return the GpuLock
+
+        The GpuLock must be released when the job is done."""
+
+        if len(self.locks) < 1:
+            raise Exception('GpuLockManager: There are no visible GPUs.')
+
+        while True:
+            for gpu_lock in self.locks:
+                if gpu_lock.try_acquire():
+                    return gpu_lock
+            print('GpuLockManager: waiting for a GPU...')
+            time.sleep(2)
