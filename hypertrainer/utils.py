@@ -96,21 +96,9 @@ class TaskStatus(Enum):
     Lost = 'Lost'
     Unknown = 'Unknown'
 
-    status_abbrev = {
-        'Waiting': 'Wait',
-        'Running': 'Runn',
-        'Finished': 'Fini',
-        'Cancelled': 'Canc',
-        'Crashed': 'Cras',
-        'RunFailed': 'RuFa',
-        'Removed': 'Remo',
-        'Lost': 'Lost',
-        'Unknown': 'Unkn'
-    }
-
     @property
     def abbrev(self):
-        return self.status_abbrev[self.value]
+        return self.value[:4]
 
     @property
     def active_states(self):

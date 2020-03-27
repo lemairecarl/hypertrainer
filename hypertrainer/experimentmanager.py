@@ -206,14 +206,14 @@ class ExperimentManager:
 
         tasks = self.get_tasks(descending_order=False, **kwargs)
         table = [[t.id,
-                  t.job_id,
+                  t.uuid,
                   t.hostname,
                   t.platform_type.abbrev,
                   t.name,
                   t.status.abbrev] for t in tasks]
         headers = [
             'ID',
-            'JobID',
+            'UUID',
             'Hostname',
             'Platf',
             'Name',
