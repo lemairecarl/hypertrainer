@@ -20,43 +20,47 @@ def run(
         python_env_command: List[str],
         resume: bool
         ):
-    # Prepare the job
-    config_file = output_path / 'config.yaml'
-    if not resume:
-        # Setup task dir
-        output_path.mkdir(parents=True, exist_ok=False)
-        config = yaml.load(config_dump)
-        yaml.dump(config, config_file)
-    stdout_path = output_path / 'out.txt'  # FIXME this ignores task.stdout_path
-    stderr_path = output_path / 'err.txt'
+    try:
+        # Prepare the job
+        config_file = output_path / 'config.yaml'
+        if not resume:
+            # Setup task dir
+            output_path.mkdir(parents=True, exist_ok=False)
+            config = yaml.load(config_dump)
+            yaml.dump(config, config_file)
+        stdout_path = output_path / 'out.txt'  # FIXME this ignores task.stdout_path
+        stderr_path = output_path / 'err.txt'
 
-    # Start the subprocess
-    p = subprocess.Popen(python_env_command + [str(script_file), str(config_file)],
-                         stdout=stdout_path.open(mode='w'),
-                         stderr=stderr_path.open(mode='w'),
-                         cwd=str(output_path),
-                         universal_newlines=True)
+        # Start the subprocess
+        p = subprocess.Popen(python_env_command + [str(script_file), str(config_file)],
+                             stdout=stdout_path.open(mode='w'),
+                             stderr=stderr_path.open(mode='w'),
+                             cwd=str(output_path),
+                             universal_newlines=True)
 
-    # Write into to local db
-    job_id = get_current_job().id
-    _update_job(job_id, {'pid': p.pid})
+        # Write into to local db
+        job_id = get_current_job().id
+        _update_job(job_id, {'pid': p.pid})
 
-    # Monitor the job
-    monitor_interval = 2  # TODO config?
-    while True:
-        poll_result = p.poll()
-        if poll_result is None:
-            _update_job(job_id, {'status': 'Running'})
-        else:
-            if p.returncode == 0:
-                print('Finished successfully')
-                _update_job(job_id, {'status': 'Finished'})
+        # Monitor the job
+        monitor_interval = 2  # TODO config?
+        while True:
+            poll_result = p.poll()
+            if poll_result is None:
+                _update_job(job_id, {'status': 'Running'})
             else:
-                print('Crashed!')
-                _update_job(job_id, {'status': 'Crashed'})
-            break  # End the rq job
-        sleep(monitor_interval)
-
+                if p.returncode == 0:
+                    print('Finished successfully')
+                    _update_job(job_id, {'status': 'Finished'})
+                else:
+                    print('Crashed!')
+                    _update_job(job_id, {'status': 'Crashed'})
+                break  # End the rq job
+            sleep(monitor_interval)
+    except Exception:
+        job_id = get_current_job().id
+        _update_job(job_id, {'status': 'RunFailed'})
+        raise
 
 
 def get_logs(output_path: str):

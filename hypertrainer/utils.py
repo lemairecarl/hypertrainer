@@ -89,13 +89,26 @@ class TaskStatus(Enum):
     Finished = 'Finished'
     Cancelled = 'Cancelled'
     Crashed = 'Crashed'
+    RunFailed = 'RunFailed'
     Removed = 'Removed'  # on Moab: time exceeded
     Lost = 'Lost'
     Unknown = 'Unknown'
 
+    status_abbrev = {
+        'Waiting': 'Wait',
+        'Running': 'Runn',
+        'Finished': 'Fini',
+        'Cancelled': 'Canc',
+        'Crashed': 'Cras',
+        'RunFailed': 'RuFa',
+        'Removed': 'Remo',
+        'Lost': 'Lost',
+        'Unknown': 'Unkn'
+    }
+
     @property
     def abbrev(self):
-        return self.value[:4]
+        return self.status_abbrev[self.value]
 
     @property
     def active_states(self):
