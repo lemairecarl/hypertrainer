@@ -54,7 +54,7 @@ class HtPlatform(ComputePlatform):
     def fetch_logs(self, task, keys=None):
         if task.hostname == '':  # The job hasn't been consumed yet
             return {}
-        rq_job = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.job_id,), ttl=2, result_ttl=2)
+        rq_job = self.worker_queues[task.hostname].enqueue(get_logs, args=(task.output_path,), ttl=2, result_ttl=2)
         logs = wait_for_result(rq_job)
         return logs
 
@@ -80,7 +80,6 @@ class HtPlatform(ComputePlatform):
                 job_info = local_db[job_id]
 
                 t.status = TaskStatus(job_info['status'])
-                t.output_path = job_info['output_path']
                 t.hostname = hostname
 
     def delete(self, task):

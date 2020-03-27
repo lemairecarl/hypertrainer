@@ -39,7 +39,7 @@ def run(
 
     # Write into to local db
     job_id = get_current_job().id
-    _update_job(job_id, {'output_path': str(output_path), 'pid': p.pid})
+    _update_job(job_id, {'pid': p.pid})
 
     # Monitor the job
     monitor_interval = 2  # TODO config?
@@ -58,9 +58,8 @@ def run(
         sleep(monitor_interval)
 
 
-def get_logs(job_id):
-    with local_db_context() as db:
-        output_path = db[job_id]['output_path']
+
+def get_logs(output_path: str):
     logs = {}
     patterns = ('*.log', '*.txt')
     for pattern in patterns:
