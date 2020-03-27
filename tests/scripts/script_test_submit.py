@@ -1,4 +1,5 @@
 import sys
+import time
 from pathlib import Path
 
 if __name__ == '__main__':
@@ -8,3 +9,4 @@ if __name__ == '__main__':
 
     print('printing to stdout')
     print('printing to stderr', file=sys.stderr)
+    time.sleep(0.5)

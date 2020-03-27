@@ -1,5 +1,4 @@
 import csv
-import os
 import uuid
 from pathlib import Path
 from typing import Iterable, Optional, List
@@ -14,7 +13,7 @@ from hypertrainer.hpsearch import generate as generate_hpsearch
 from hypertrainer.htplatform import HtPlatform
 from hypertrainer.localplatform import LocalPlatform
 from hypertrainer.task import Task
-from hypertrainer.utils import yaml, print_yaml, TaskStatus
+from hypertrainer.utils import yaml, print_yaml, TaskStatus, TestState
 
 
 class ExperimentManager:
@@ -34,12 +33,8 @@ class ExperimentManager:
         self.platform_instances = {
             ComputePlatformType.LOCAL: LocalPlatform()
         }
-        if 'HTPLATFORM_WORKERS' in os.environ:
-            self.platform_instances[ComputePlatformType.HT] \
-                = HtPlatform(os.environ['HTPLATFORM_WORKERS'].split(','))
-        else:
-            self.platform_instances[ComputePlatformType.HT] \
-                = HtPlatform(['localhost'])  # FIXME
+        if not TestState.test_mode:
+            self.platform_instances[ComputePlatformType.HT] = HtPlatform(['localhost'])  # FIXME
 
     def get_tasks(self, platform: Optional[ComputePlatformType] = None,
                   proj: Optional[str] = None,

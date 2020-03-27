@@ -2,15 +2,15 @@ import time
 from pathlib import Path
 from typing import List, Iterable, Dict
 
-from redis import Redis
 import redis.exceptions
+from redis import Redis
 from rq import Queue
 from rq.job import Job
 
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
-from hypertrainer.utils import TaskStatus, get_python_env_command
 from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception, delete_job
+from hypertrainer.utils import TaskStatus, get_python_env_command
 
 
 def check_connection(redis_conn):
@@ -29,14 +29,15 @@ class HtPlatform(ComputePlatform):
     Each participating worker consumes jobs from a global queue. There can be several workers per machine.
     """
 
-    def __init__(self, worker_hostnames: List[str]):
+    def __init__(self, worker_hostnames: List[str], same_thread=False):
         self.worker_hostnames = worker_hostnames
 
         redis_conn = Redis(port=6380)  # FIXME config
         check_connection(redis_conn)
 
-        self.jobs_queue = Queue(name='jobs', connection=redis_conn)
-        self.worker_queues: Dict[str, Queue] = {h: Queue(name=h, connection=redis_conn) for h in self.worker_hostnames}
+        self.jobs_queue = Queue(name='jobs', connection=redis_conn, is_async=not same_thread)
+        self.worker_queues: Dict[str, Queue] = {h: Queue(name=h, connection=redis_conn, is_async=not same_thread)
+                                                for h in self.worker_hostnames}
 
     def submit(self, task, resume=False):
         output_path = Path(task.output_root) / str(task.uuid)

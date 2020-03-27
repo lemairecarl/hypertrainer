@@ -1,4 +1,5 @@
 import contextlib
+import os
 import pickle
 import shutil
 import subprocess
@@ -8,7 +9,7 @@ from typing import List
 
 from rq import get_current_job
 
-from hypertrainer.utils import yaml, hypertrainer_home
+from hypertrainer.utils import yaml, hypertrainer_home, GpuLockManager
 
 local_db = hypertrainer_home / 'db.pkl'  # FIXME config
 
@@ -20,9 +21,11 @@ def run(
         python_env_command: List[str],
         resume: bool
         ):
+    gpu_lock = None
     try:
         # Prepare the job
         config_file = output_path / 'config.yaml'
+        config = yaml.load(config_dump)
         if not resume:
             # Setup task dir
             output_path.mkdir(parents=True, exist_ok=False)
@@ -31,12 +34,23 @@ def run(
         stdout_path = output_path / 'out.txt'  # FIXME this ignores task.stdout_path
         stderr_path = output_path / 'err.txt'
 
+        # Manage GPU dependency
+        env_vars = os.environ
+        if 'num_gpus' in config:
+            num_required_gpus = config['num_gpus']
+            if num_required_gpus > 1:
+                raise NotImplementedError
+            gpu_lock = GpuLockManager().acquire_one_gpu()
+            env_vars = os.environ.copy()
+            env_vars['CUDA_VISIBLE_DEVICES'] = gpu_lock.gpu_id
+
         # Start the subprocess
         p = subprocess.Popen(python_env_command + [str(script_file), str(config_file)],
                              stdout=stdout_path.open(mode='w'),
                              stderr=stderr_path.open(mode='w'),
                              cwd=str(output_path),
-                             universal_newlines=True)
+                             universal_newlines=True,
+                             env=env_vars)
 
         # Write into to local db
         job_id = get_current_job().id
@@ -57,10 +71,15 @@ def run(
                     _update_job(job_id, {'status': 'Crashed'})
                 break  # End the rq job
             sleep(monitor_interval)
+
     except Exception:
         job_id = get_current_job().id
         _update_job(job_id, {'status': 'RunFailed'})
         raise
+    finally:
+        # Release the GPU lock if needed
+        if gpu_lock is not None:
+            gpu_lock.release()
 
 
 def get_logs(output_path: str):

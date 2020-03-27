@@ -2,7 +2,7 @@
 import argparse
 import socket
 from multiprocessing import Process
-from typing import Optional, Tuple
+from typing import List
 
 from redis import Redis
 from rq import Connection, Worker
@@ -14,39 +14,37 @@ from rq.worker import StopRequested
 
 
 class WorkerContext:
-    def __init__(self, hostname):
+    def __init__(self, hostname, num_workers=1):
         self.hostname = hostname if hostname is not None else socket.gethostname()
         redis_port = 6380  # FIXME config
         self.redis_conn = Redis(port=redis_port)
         self.conn = Connection(self.redis_conn)
-        self.worker_proc_pair: Optional[Tuple[Process]] = None
+
+        self.worker_processes: List[Process] = []
+        self.num_workers = num_workers
 
         print('Redis port:', redis_port)
 
     def __enter__(self):
         self.conn.__enter__()
 
-        specific_queue_worker = Process(target=work, args=(self.hostname,))
-        jobs_queue_worker = Process(target=work, args=('jobs',))
+        self.worker_processes.append(Process(target=work, args=(self.hostname,)))  # Worker specific queue
+        self.worker_processes += [Process(target=work, args=('jobs',)) for _ in range(self.num_workers)]
 
-        specific_queue_worker.start()
-        jobs_queue_worker.start()
-
-        self.worker_proc_pair = specific_queue_worker, jobs_queue_worker
+        for w in self.worker_processes:
+            w.start()
 
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.conn.__exit__(exc_type, exc_val, exc_tb)
 
-        specific_queue_worker, jobs_queue_worker = self.worker_proc_pair
-        specific_queue_worker.terminate()
-        jobs_queue_worker.terminate()
+        for w in self.worker_processes:
+            w.terminate()
 
     def wait(self):
-        specific_queue_worker, jobs_queue_worker = self.worker_proc_pair
-        specific_queue_worker.join()
-        jobs_queue_worker.join()
+        for w in self.worker_processes:
+            w.join()
 
 
 def work(queue_name):
@@ -61,14 +59,15 @@ def work(queue_name):
         pass
 
 
-def start_worker(hostname=None):
-    with WorkerContext(hostname=hostname) as c:
+def start_worker(**kwargs):
+    with WorkerContext(**kwargs) as c:
         c.wait()
 
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--hostname', type=str)
+    ap.add_argument('--workers', type=int, default=1)
     args = ap.parse_args()
 
-    start_worker(hostname=args.hostname)
+    start_worker(hostname=args.hostname, num_workers=args.workers)

@@ -6,6 +6,7 @@ import pytest
 
 # Trick for initializing a test database
 from hypertrainer.utils import TaskStatus, yaml, deep_assert_equal, TestState
+
 TestState.test_mode = True
 
 from hypertrainer.experimentmanager import experiment_manager
@@ -181,10 +182,8 @@ class TestLocal:
 
 @pytest.fixture
 def ht_platform():
-    if ComputePlatformType.HT not in experiment_manager.platform_instances:
-        experiment_manager.platform_instances[ComputePlatformType.HT] = HtPlatform(['localhost'])
-
-    _ht_platform = experiment_manager.platform_instances[ComputePlatformType.HT]
+    _ht_platform = HtPlatform(['localhost'])
+    experiment_manager.platform_instances[ComputePlatformType.HT] = _ht_platform
     try:
         answers = _ht_platform.ping_workers()
     except (ConnectionError, ConnectionRefusedError):
@@ -192,6 +191,13 @@ def ht_platform():
     except TimeoutError:
         raise Exception('The ping timed out. A worker must listen queue \'localhost\'')
     assert answers == ['localhost']
+    return _ht_platform
+
+
+@pytest.fixture
+def ht_platform_same_thread():
+    _ht_platform = HtPlatform(['localhost'], same_thread=True)
+    experiment_manager.platform_instances[ComputePlatformType.HT] = _ht_platform
     return _ht_platform
 
 
@@ -204,6 +210,10 @@ class TestRq:
 
         # Check that the task has status Waiting
         assert tasks[0].status == TaskStatus.Waiting
+
+        sleep(0.2)
+        experiment_manager.update_tasks()
+        assert experiment_manager.get_tasks_by_id([tasks[0].id])[0].status == TaskStatus.Running
 
         # Check that the task finishes successfully
         wait_task_finished(tasks[2].id, interval_secs=2, tries=6)
@@ -245,6 +255,21 @@ class TestRq:
         worker_db = info_dicts[0]
         assert task.job_id not in worker_db
 
+    def test_rq_acquire_one_gpu(self, monkeypatch, ht_platform_same_thread):
+        monkeypatch.setenv('CUDA_VISIBLE_DEVICES', '0,1')
+
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'test_gpu_1.yaml'),
+            platform='ht')
+        t1_id = tasks[0].id
+
+        wait_task_finished(t1_id, interval_secs=1, tries=3)
+
+        t1 = experiment_manager.get_tasks_by_id([t1_id])[0]
+        experiment_manager.monitor(t1)
+
+        assert t1.logs['out'].strip() == 'gpu_id=0'
+
 
 def wait_true(fn, interval_secs=0.4, tries=6):
     for i in range(tries):
@@ -256,9 +281,17 @@ def wait_true(fn, interval_secs=0.4, tries=6):
 
 
 def wait_task_finished(task_id, interval_secs=0.4, tries=6):
-    def check_finished():
+    def get_status():
         experiment_manager.update_tasks()
-        status = Task.get(Task.id == task_id).status
-        return status == TaskStatus.Finished
+        return Task.get(Task.id == task_id).status
 
-    wait_true(check_finished, interval_secs=interval_secs, tries=tries)
+    for i in range(tries):
+        status = get_status()
+        if status == TaskStatus.Finished:
+            return
+        elif status in (TaskStatus.Running, TaskStatus.Waiting):
+            sleep(interval_secs)
+        else:
+            experiment_manager.print_output(task_id)
+            raise ChildProcessError(str(status))
+    raise TimeoutError
