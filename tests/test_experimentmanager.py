@@ -36,7 +36,7 @@ def test_export_yaml():
 
 
 class TestLocal:
-    def test_local_output_path(self):
+    def test_output_path(self):
         tasks = experiment_manager.create_tasks(
             config_file=str(scripts_path / 'simple.yaml'),
             platform='local')
@@ -74,7 +74,7 @@ class TestLocal:
         os.chdir(old_cwd)
 
 
-    def test_submit_local(self):
+    def test_submit(self):
         # 1. Launch task
         tasks = experiment_manager.create_tasks(
             config_file=str(scripts_path / 'test_submit.yaml'),
@@ -128,7 +128,7 @@ class TestLocal:
             assert -2 <= p_lin <= 2
 
 
-    def test_archive_task(self):
+    def test_archive(self):
         # 1. Submit local task
         tasks = experiment_manager.create_tasks(
             config_file=str(scripts_path / 'test_submit.yaml'),
@@ -154,7 +154,7 @@ class TestLocal:
         assert task_id in [t.id for t in archived_tasks]
 
 
-    def test_delete_local_task(self):
+    def test_delete(self):
         def get_task_folder(task_id):
             return Path(Task.get(Task.id == task_id).output_path)
 
@@ -217,7 +217,7 @@ def ht_platform_same_thread():
 
 
 class TestRq:
-    def test_submit_rq_task(self, ht_platform):
+    def test_submit(self, ht_platform):
         # Submit rq task
         tasks = experiment_manager.create_tasks(
             platform='ht',
@@ -233,7 +233,7 @@ class TestRq:
         # Check that the task finishes successfully
         wait_task_finished(tasks[2].id, interval_secs=2, tries=6)
 
-    def test_delete_rq_task(self, ht_platform):
+    def test_delete(self, ht_platform):
         # Submit task
         tasks = experiment_manager.create_tasks(
             platform='ht',
@@ -270,7 +270,7 @@ class TestRq:
         worker_db = info_dicts[0]
         assert task.job_id not in worker_db
 
-    def test_rq_acquire_one_gpu(self, monkeypatch, ht_platform_same_thread):
+    def test_acquire_one_gpu(self, monkeypatch, ht_platform_same_thread):
         monkeypatch.setenv('CUDA_VISIBLE_DEVICES', '0,1')
 
         tasks = experiment_manager.create_tasks(
