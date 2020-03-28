@@ -100,12 +100,16 @@ class TaskStatus(Enum):
     def abbrev(self):
         return self.value[:4]
 
-    @property
-    def active_states(self):
+    @staticmethod
+    def active_states():
         return {TaskStatus.Waiting, TaskStatus.Running, TaskStatus.Unknown}
 
+    @staticmethod
+    def active_or_lost_states():
+        return {TaskStatus.Waiting, TaskStatus.Running, TaskStatus.Unknown, TaskStatus.Lost}
+
     def is_active(self):
-        return self in self.active_states
+        return self in self.active_states()
 
     def __str__(self):
         return self.value

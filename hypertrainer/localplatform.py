@@ -52,6 +52,8 @@ class LocalPlatform(ComputePlatform):
 
     def update_tasks(self, tasks):
         for t in tasks:
+            assert t.status in TaskStatus.active_or_lost_states()
+
             p = self.processes.get(t.job_id)
             if p is None:
                 t.status = TaskStatus.Lost

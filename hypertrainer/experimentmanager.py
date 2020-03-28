@@ -71,7 +71,8 @@ class ExperimentManager:
             platforms = self.list_platforms()
         for ptype in platforms:
             platform = self.platform_instances[ptype]
-            tasks = list(Task.select().where(Task.platform_type == ptype))
+            tasks = list(Task.select().where((Task.platform_type == ptype)
+                                             & (Task.status.in_(TaskStatus.active_or_lost_states()))))
             if len(tasks) == 0:
                 continue
             platform.update_tasks(tasks)
