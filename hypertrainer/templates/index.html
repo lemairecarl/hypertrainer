@@ -33,14 +33,10 @@
   <div class="header">Submit new task</div>
   <div class="content">
     <form action="/?action=submit" method="post" class="ui form" id="form-new-task">
-      <div class="two fields">
-        <div class="field">
-          <label for="script">Script</label>
-          <input name="script" id="script" value="dummy.py">
-        </div>
+      <div class="one field">
         <div class="field">
           <label for="config">Config</label>
-          <input name="config" id="config" value="plot_test.yaml">
+          <input name="config" id="config" value="/home/carl/source/hypertrainer/hypertrainer/sample/plot_test.yaml">
         </div>
       </div>
       <div class="two fields">
@@ -75,7 +71,7 @@
     </form>
   </div>
   <div class="actions">
-    <div class="ui approve button">Submit</div>
+    <div class="ui approve button" tabindex="0">Submit</div>
     <div class="ui cancel button">Cancel</div>
   </div>
 </div>

@@ -89,11 +89,10 @@ def update(platform):
 
 def submit():
     platform = request.form['platform']
-    script_file = request.form['script']
     config_file = request.form['config']
     project = request.form['project']
-    em.create_tasks(platform, script_file, config_file, project=project)
-    flash('Submitted "{}" with "{}" on {}.'.format(script_file, config_file, platform), 'success')
+    em.create_tasks(platform, config_file, project=project)
+    flash('Submitted "{}" on {}.'.format(config_file, platform), 'success')
     return redirect(url_for('index'))
 
 
