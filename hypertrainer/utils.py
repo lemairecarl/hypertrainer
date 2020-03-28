@@ -91,25 +91,22 @@ class TaskStatus(Enum):
     Finished = 'Finished'
     Cancelled = 'Cancelled'
     Crashed = 'Crashed'
-    RunFailed = 'RunFailed'
+    RunFailed = 'RunFailed'  # Error occured while trying to start
     Removed = 'Removed'  # on Moab: time exceeded
-    Lost = 'Lost'
-    Unknown = 'Unknown'
+    Lost = 'Lost'  # Officially lost and inactive; will not be updated
+    Unknown = 'Unknown'  # Temporarily (or not) unknown. E.g. trying to contact worker
 
     @property
     def abbrev(self):
         return self.value[:4]
 
+    @property
+    def is_active(self):
+        return self in self.active_states()
+
     @staticmethod
     def active_states():
         return {TaskStatus.Waiting, TaskStatus.Running, TaskStatus.Unknown}
-
-    @staticmethod
-    def active_or_lost_states():
-        return {TaskStatus.Waiting, TaskStatus.Running, TaskStatus.Unknown, TaskStatus.Lost}
-
-    def is_active(self):
-        return self in self.active_states()
 
     def __str__(self):
         return self.value

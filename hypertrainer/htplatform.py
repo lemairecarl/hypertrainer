@@ -66,20 +66,19 @@ class HtPlatform(ComputePlatform):
         # TODO only check requested ids
 
         for t in tasks:
-            if not t.status == TaskStatus.Waiting and t.status.is_active():
-                t.status = TaskStatus.Lost
+            assert t.status.is_active
+            if t.status != TaskStatus.Waiting:  # Waiting will not be found until they are picked up
+                t.status = TaskStatus.Unknown  # State is unknown, unless we find the task in a worker db
         job_id_to_task = {t.job_id: t for t in tasks}
 
         info_dicts = self._get_info_dict_for_each_worker()
         for hostname, local_db in zip(self.worker_hostnames, info_dicts):
             if local_db is None:
-                continue
+                continue  # Did not receive an answer from worker
             for job_id in set(local_db.keys()).intersection(job_id_to_task.keys()):
+                # For each task in the intersection of (tasks to update) and (tasks in worker db)
                 t = job_id_to_task[job_id]
-                if not t.status.is_active() and not t.status == TaskStatus.Lost:
-                    continue  # Do not update task if inactive, e.g. Finished
                 job_info = local_db[job_id]
-
                 t.status = TaskStatus(job_info['status'])
                 t.hostname = hostname
 

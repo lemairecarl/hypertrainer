@@ -72,7 +72,7 @@ class ExperimentManager:
         for ptype in platforms:
             platform = self.platform_instances[ptype]
             tasks = list(Task.select().where((Task.platform_type == ptype)
-                                             & (Task.status.in_(TaskStatus.active_or_lost_states()))))
+                                             & (Task.status.in_(TaskStatus.active_states()))))
             if len(tasks) == 0:
                 continue
             platform.update_tasks(tasks)
@@ -124,7 +124,7 @@ class ExperimentManager:
         Resume the tasks from where they left off, if possible.
         """
         for t in tasks:
-            if not t.status.is_active():
+            if not t.status.is_active:
                 t.job_id = self.get_platform(t).submit(t, resume=True)  # TODO one bulk ssh command
                 t.post_resume()
 
@@ -141,7 +141,7 @@ class ExperimentManager:
         Stop the execution of the tasks.
         """
         for t in tasks:
-            if t.status.is_active():
+            if t.status.is_active:
                 self.get_platform(t).cancel(t)  # TODO one bulk ssh command
                 t.post_cancel()
 

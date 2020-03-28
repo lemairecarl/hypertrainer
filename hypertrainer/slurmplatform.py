@@ -72,7 +72,7 @@ class SlurmPlatform(ComputePlatform):
             else:
                 # Job still active (or lost)
                 if t.job_id not in statuses:
-                    t.status = TaskStatus.Lost  # Job not found
+                    t.status = TaskStatus.Lost  # Job not found -> lost
 
     def _get_statuses(self, job_ids):
         data = subprocess.run(['ssh', self.server_user, 'squeue -u $USER | grep $USER'],

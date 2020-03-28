@@ -157,15 +157,15 @@
               <td>{{ task.hostname }}</td>
               <td>{{ task.job_id }}</td>
               <td>{{ task.name }}</td>
-              <td data-col="status" class="{{ 'updating' if task.status.is_active() else task.status.value }}">
+              <td data-col="status" class="{{ 'updating' if task.status.is_active else task.status.value }}">
                 {{ task.status.value }}
               </td>
-              <td data-col="epoch" class="{{ 'updating' if task.status.is_active() else '' }}">
+              <td data-col="epoch" class="{{ 'updating' if task.status.is_active else '' }}">
                 {{ task.cur_epoch }} / {{ task.num_epochs }}
               </td>
-              <td data-col="iteration" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
-              <td data-col="total_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
-              <td data-col="ep_time_remain" class="{{ 'updating' if task.status.is_active() else '' }}"></td>
+              <td data-col="iteration" class="{{ 'updating' if task.status.is_active else '' }}"></td>
+              <td data-col="total_time_remain" class="{{ 'updating' if task.status.is_active else '' }}"></td>
+              <td data-col="ep_time_remain" class="{{ 'updating' if task.status.is_active else '' }}"></td>
             </tr>
           {% endfor %}
         {% else %}
