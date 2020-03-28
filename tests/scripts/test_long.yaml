@@ -1,0 +1,2 @@
+script: script_test_long.py
+output_root: /home/carl/hypertrainer/output

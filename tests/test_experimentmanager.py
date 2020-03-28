@@ -86,7 +86,7 @@ class TestLocal:
 
         # Wait task finished
         def check_finished():
-            experiment_manager.update_tasks()
+            experiment_manager.update_tasks([ComputePlatformType.LOCAL])
             status = Task.get(Task.id == tasks[2].id).status
             return status == TaskStatus.Finished
 
@@ -179,6 +179,21 @@ class TestLocal:
         # 6. Check that files on disk have been deleted
         wait_true(lambda: not task_folder.exists())
 
+    def test_cancel(self):
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'test_long.yaml'),
+            platform='local')
+        task_id = tasks[0].id
+
+        experiment_manager.cancel_tasks_by_id([task_id])
+
+        def check_cancelled():
+            experiment_manager.update_tasks([ComputePlatformType.LOCAL])
+            t = experiment_manager.get_tasks_by_id([task_id])[0]
+            return t.status == TaskStatus.Cancelled
+
+        wait_true(check_cancelled)
+
 
 @pytest.fixture
 def ht_platform():
@@ -212,7 +227,7 @@ class TestRq:
         assert tasks[0].status == TaskStatus.Waiting
 
         sleep(0.2)
-        experiment_manager.update_tasks()
+        experiment_manager.update_tasks([ComputePlatformType.HT])
         assert experiment_manager.get_tasks_by_id([tasks[0].id])[0].status == TaskStatus.Running
 
         # Check that the task finishes successfully
