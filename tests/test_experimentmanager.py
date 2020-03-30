@@ -221,17 +221,22 @@ class TestRq:
         # Submit rq task
         tasks = experiment_manager.create_tasks(
             platform='ht',
-            config_file=str(scripts_path / 'test_submit.yaml'))
+            config_file=str(scripts_path / 'simple.yaml'))
 
         # Check that the task has status Waiting
         assert tasks[0].status == TaskStatus.Waiting
 
-        sleep(0.2)
+        sleep(0.2)  # FIXME this is too flaky
+        task_id = tasks[0].id
         experiment_manager.update_tasks([ComputePlatformType.HT])
-        assert experiment_manager.get_tasks_by_id([tasks[0].id])[0].status == TaskStatus.Running
+        assert experiment_manager.get_tasks_by_id([task_id])[0].status == TaskStatus.Running
 
         # Check that the task finishes successfully
-        wait_task_finished(tasks[2].id, interval_secs=2, tries=6)
+        wait_task_finished(task_id, interval_secs=2, tries=6)
+
+    @pytest.mark.xfail
+    def test_submit_multiple(self, ht_platform):
+        raise NotImplementedError  # TODO: hpsearch
 
     def test_delete(self, ht_platform):
         # Submit task
