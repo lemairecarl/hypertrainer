@@ -23,7 +23,7 @@ assert Task.select().count() == 0, 'Must work on empty test db'
 
 def test_export_yaml():
     experiment_manager.create_tasks(
-        config_file=str(scripts_path / 'test_submit.yaml'),
+        config_file=str(scripts_path / 'test_hp.yaml'),
         platform='local')
 
     tmpfile = Path('/tmp/httest.yaml')
@@ -38,7 +38,7 @@ def test_export_yaml():
 class TestLocal:
     def test_output_path(self):
         tasks = experiment_manager.create_tasks(
-            config_file=str(scripts_path / 'simple.yaml'),
+            config_file=str(scripts_path / 'test_simple.yaml'),
             platform='local')
         task = tasks[0]
 
@@ -62,7 +62,7 @@ class TestLocal:
         os.chdir('/tmp/hypertrainer')
 
         tasks = experiment_manager.create_tasks(
-            config_file=str(scripts_path / 'simple.yaml'),
+            config_file=str(scripts_path / 'test_simple.yaml'),
             platform='local')
         task = tasks[0]
 
@@ -77,7 +77,7 @@ class TestLocal:
     def test_submit(self):
         # 1. Launch task
         tasks = experiment_manager.create_tasks(
-            config_file=str(scripts_path / 'test_submit.yaml'),
+            config_file=str(scripts_path / 'test_hp.yaml'),
             platform='local')
         task_ids = [t.id for t in tasks]
 
@@ -94,7 +94,7 @@ class TestLocal:
 
         # 3. Check stuff on each task
         p_exp10_values, p_exp2_values, p_lin_values = set(), set(), set()
-        orig_yaml = yaml.load(scripts_path / 'test_submit.yaml')
+        orig_yaml = yaml.load(scripts_path / 'test_hp.yaml')
         for t in Task.select().where(Task.id.in_(task_ids)):  # type: Task
             # Check that yaml has been written correctly
             # NOTE: THIS FAILS IN DEBUG MODE
@@ -131,7 +131,7 @@ class TestLocal:
     def test_archive(self):
         # 1. Submit local task
         tasks = experiment_manager.create_tasks(
-            config_file=str(scripts_path / 'test_submit.yaml'),
+            config_file=str(scripts_path / 'test_hp.yaml'),
             platform='local')
         task_id = tasks[0].id
 
@@ -160,7 +160,7 @@ class TestLocal:
 
         # 1. Submit task
         tasks = experiment_manager.create_tasks(
-            config_file=str(scripts_path / 'test_submit.yaml'),
+            config_file=str(scripts_path / 'test_hp.yaml'),
             platform='local')
         task_id = tasks[0].id
         # 1.1 Wait that the folder exist on disk
@@ -221,7 +221,7 @@ class TestRq:
         # Submit rq task
         tasks = experiment_manager.create_tasks(
             platform='ht',
-            config_file=str(scripts_path / 'simple.yaml'))
+            config_file=str(scripts_path / 'test_simple.yaml'))
 
         # Check that the task has status Waiting
         assert tasks[0].status == TaskStatus.Waiting
@@ -242,7 +242,7 @@ class TestRq:
         # Submit task
         tasks = experiment_manager.create_tasks(
             platform='ht',
-            config_file=str(scripts_path / 'simple.yaml'))
+            config_file=str(scripts_path / 'test_simple.yaml'))
         task_id = tasks[0].id
 
         # Wait task finish
