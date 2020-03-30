@@ -275,6 +275,22 @@ class TestRq:
         worker_db = info_dicts[0]
         assert task.job_id not in worker_db
 
+    @pytest.mark.xfail
+    def test_cancel(self, ht_platform):
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'test_long.yaml'),
+            platform='ht')
+        task_id = tasks[0].id
+
+        experiment_manager.cancel_tasks_by_id([task_id])
+
+        def check_cancelled():
+            experiment_manager.update_tasks([ComputePlatformType.HT])
+            t = experiment_manager.get_tasks_by_id([task_id])[0]
+            return t.status == TaskStatus.Cancelled
+
+        wait_true(check_cancelled)
+
     def test_acquire_one_gpu(self, monkeypatch, ht_platform_same_thread):
         monkeypatch.setenv('CUDA_VISIBLE_DEVICES', '0,1')
 
