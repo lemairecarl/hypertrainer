@@ -5,6 +5,7 @@ import pytest
 from ruamel.yaml import YAML
 
 
+@pytest.mark.xfail
 def test_empty_db(client):
     """Test blank database."""
 
@@ -12,6 +13,7 @@ def test_empty_db(client):
     assert b'No tasks to show' in rv.data
 
 
+@pytest.mark.xfail
 def test_submit_local(client):
     # Note: client has to be passed to this test to setup the flask app correctly
 
@@ -65,6 +67,7 @@ def test_submit_local(client):
         assert -2 <= p_lin <= 2
 
 
+@pytest.mark.xfail
 def test_resume_local(client):
     # Note: client has to be passed to this test to setup the flask app correctly
 
