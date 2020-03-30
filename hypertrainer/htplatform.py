@@ -5,11 +5,12 @@ from typing import List, Iterable, Dict
 import redis.exceptions
 from redis import Redis
 from rq import Queue
-from rq.job import Job
+from rq.job import Job, cancel_job as cancel_rq_job
 
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
-from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception, delete_job
+from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception, delete_job, \
+    cancel_job
 from hypertrainer.utils import TaskStatus, get_python_env_command
 
 
@@ -34,6 +35,7 @@ class HtPlatform(ComputePlatform):
 
         redis_conn = Redis(port=6380)  # FIXME config
         check_connection(redis_conn)
+        self.redis_conn = redis_conn
 
         self.jobs_queue = Queue(name='jobs', connection=redis_conn, is_async=not same_thread)
         self.worker_queues: Dict[str, Queue] = {h: Queue(name=h, connection=redis_conn, is_async=not same_thread)
@@ -60,7 +62,8 @@ class HtPlatform(ComputePlatform):
         return logs
 
     def cancel(self, task):
-        raise NotImplementedError
+        cancel_rq_job(task.job_id, connection=self.redis_conn)  # This ensures the job will not start
+        cancel_job(task.job_id)
 
     def update_tasks(self, tasks):
         # TODO only check requested ids

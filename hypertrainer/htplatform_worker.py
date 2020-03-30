@@ -9,7 +9,7 @@ from typing import List
 
 from rq import get_current_job
 
-from hypertrainer.utils import yaml, hypertrainer_home, GpuLockManager
+from hypertrainer.utils import yaml, hypertrainer_home, GpuLockManager, TaskStatus
 
 local_db = hypertrainer_home / 'db.pkl'  # FIXME config
 
@@ -54,27 +54,33 @@ def run(
 
         # Write into to local db
         job_id = get_current_job().id
-        _update_job(job_id, {'pid': p.pid})
+        with local_db_context() as db:
+            assert job_id not in db, 'Something has gone terribly wrong.'
+            db[job_id] = {'pid': p.pid, 'status': TaskStatus.Unknown.value}
 
         # Monitor the job
         monitor_interval = 2  # TODO config?
         while True:
             poll_result = p.poll()
             if poll_result is None:
-                _update_job(job_id, {'status': 'Running'})
+                with local_db_context() as db:
+                    if db[job_id]['status'] == TaskStatus.Cancelled.value:
+                        break  # End the rq job, which will kill the subprocess
+                    else:
+                        db[job_id]['status'] = TaskStatus.Running.value
             else:
                 if p.returncode == 0:
                     print('Finished successfully')
-                    _update_job(job_id, {'status': 'Finished'})
+                    _set_job_status(job_id, TaskStatus.Finished.value)
                 else:
                     print('Crashed!')
-                    _update_job(job_id, {'status': 'Crashed'})
+                    _set_job_status(job_id, TaskStatus.Crashed.value)
                 break  # End the rq job
             sleep(monitor_interval)
 
     except Exception:
         job_id = get_current_job().id
-        _update_job(job_id, {'status': 'RunFailed'})
+        _set_job_status(job_id, TaskStatus.RunFailed.value)
         raise
     finally:
         # Release the GPU lock if needed
@@ -97,6 +103,15 @@ def delete_job(job_id: str, output_path: str):
     print('Deleting', output_path)
     shutil.rmtree(output_path,
                   onerror=lambda function, path, excinfo: print('ERROR', function, path, excinfo))
+
+
+def cancel_job(job_id: str):
+    assert isinstance(job_id, str)
+    # We communicate with the running job through the local db
+    with local_db_context() as db:
+        if job_id not in db:
+            raise Exception('Cannot cancel job that is not in worker db')
+        db[job_id]['status'] = TaskStatus.Cancelled.value
 
 
 def ping(msg):
@@ -130,11 +145,9 @@ def local_db_context():
         pickle.dump(db, f)
 
 
-def _update_job(job_id: str, data: dict):
+def _set_job_status(job_id: str, status_str: str):
     with local_db_context() as db:
-        if job_id not in db:
-            db[job_id] = {}
-        db[job_id].update(data)
+        db[job_id]['status'] = status_str
 
 
 def _delete_job(job_id: str):

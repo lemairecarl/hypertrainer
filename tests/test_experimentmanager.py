@@ -288,13 +288,20 @@ class TestRq:
             platform='ht')
         task_id = tasks[0].id
 
+        # Check that the task is running
+        def check_running():
+            experiment_manager.update_tasks([ComputePlatformType.HT])
+            t = experiment_manager.get_tasks_by_id([task_id])[0]
+            return t.status == TaskStatus.Running
+        wait_true(check_running)
+
         experiment_manager.cancel_tasks_by_id([task_id])
 
+        # Check that the task is cancelled
         def check_cancelled():
             experiment_manager.update_tasks([ComputePlatformType.HT])
             t = experiment_manager.get_tasks_by_id([task_id])[0]
             return t.status == TaskStatus.Cancelled
-
         wait_true(check_cancelled)
 
     def test_acquire_one_gpu(self, monkeypatch, ht_platform_same_thread):
