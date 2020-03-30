@@ -236,7 +236,13 @@ class TestRq:
 
     @pytest.mark.xfail
     def test_submit_multiple(self, ht_platform):
-        raise NotImplementedError  # TODO: hpsearch
+        # Submit rq task
+        tasks = experiment_manager.create_tasks(
+            platform='ht',
+            config_file=str(scripts_path / 'test_hp.yaml'))
+
+        # Check that the task finishes successfully
+        wait_task_finished(tasks[0].id, interval_secs=1, tries=8)
 
     def test_delete(self, ht_platform):
         # Submit task
