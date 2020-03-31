@@ -197,7 +197,7 @@ class TestLocal:
 
 @pytest.fixture
 def ht_platform():
-    _ht_platform = HtPlatform(['localhost'])
+    _ht_platform = HtPlatform()
     experiment_manager.platform_instances[ComputePlatformType.HT] = _ht_platform
     try:
         answers = _ht_platform.ping_workers()
@@ -211,7 +211,7 @@ def ht_platform():
 
 @pytest.fixture
 def ht_platform_same_thread():
-    _ht_platform = HtPlatform(['localhost'], same_thread=True)
+    _ht_platform = HtPlatform(same_thread=True)
     experiment_manager.platform_instances[ComputePlatformType.HT] = _ht_platform
     return _ht_platform
 

@@ -28,13 +28,11 @@ class ExperimentManager:
 
         init_db()
 
-        # TODO initialize from config yaml instead of env vars
-        # Instantiate ComputePlatform's if available
         self.platform_instances = {
             ComputePlatformType.LOCAL: LocalPlatform()
         }
         if not TestState.test_mode:
-            self.platform_instances[ComputePlatformType.HT] = HtPlatform(['localhost'])  # FIXME
+            self.platform_instances[ComputePlatformType.HT] = HtPlatform()
 
     def get_tasks(self, platform: Optional[ComputePlatformType] = None,
                   proj: Optional[str] = None,

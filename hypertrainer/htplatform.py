@@ -11,7 +11,7 @@ from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception, delete_job, \
     cancel_job
-from hypertrainer.utils import TaskStatus, get_python_env_command
+from hypertrainer.utils import TaskStatus, get_python_env_command, config_context
 
 
 def check_connection(redis_conn):
@@ -30,12 +30,13 @@ class HtPlatform(ComputePlatform):
     Each participating worker consumes jobs from a global queue. There can be several workers per machine.
     """
 
-    def __init__(self, worker_hostnames: List[str], same_thread=False):
-        self.worker_hostnames = worker_hostnames
+    def __init__(self, same_thread=False):
+        with config_context() as config:
+            self.worker_hostnames = config['ht_platform']['worker_hostnames']
 
-        redis_conn = Redis(port=6380)  # FIXME config
-        check_connection(redis_conn)
-        self.redis_conn = redis_conn
+            redis_conn = Redis(port=config['ht_platform']['redis_port'])
+            check_connection(redis_conn)
+            self.redis_conn = redis_conn
 
         self.jobs_queue = Queue(name='jobs', connection=redis_conn, is_async=not same_thread)
         self.worker_queues: Dict[str, Queue] = {h: Queue(name=h, connection=redis_conn, is_async=not same_thread)
@@ -140,6 +141,8 @@ if __name__ == '__main__':
 
     assert args.mode == 'test'
 
-    redis_conn = Redis(port=6380)  # FIXME config
+    with config_context() as config:
+        redis_port = config['ht_platform']['redis_port']
+    redis_conn = Redis(port=redis_port)
     queue = Queue(name=args.queue, connection=redis_conn)
     job = queue.enqueue(test_job, args=(args.msg,))

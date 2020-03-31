@@ -1,3 +1,4 @@
+import contextlib
 import fcntl
 import os
 import sys
@@ -118,7 +119,6 @@ def get_python_env_command(project_path: Path, platform: str) -> List[str]:
     The default is 'python', but this can be configured to use a conda env.
     """
 
-    # TODO move this in common file (it's used by htplatform_worker.py)
     default_interpreter = ['python']
 
     env_config_file = project_path / 'env.yaml'
@@ -221,3 +221,23 @@ class GpuLockManager:
                     return gpu_lock
             print('GpuLockManager: waiting for a GPU...')
             time.sleep(2)
+
+
+def get_config_file() -> Path:
+    config_path = hypertrainer_home / 'config.yaml'
+    if not config_path.exists():
+        default_config_path = Path(__file__).parent / 'default_config.yaml'
+        config_path.write_text(default_config_path.read_text())
+    return config_path
+
+
+@contextlib.contextmanager
+def config_context():
+    config_file_path = get_config_file()
+    file_initialized = config_file_path.exists()
+    with config_file_path.open('r+') as f:
+        config = yaml.load(f) if file_initialized else {}
+        yield config
+        f.seek(0)
+        f.truncate()
+        yaml.dump(config, f)

@@ -136,7 +136,7 @@ def _check_init_db():
 
 @contextlib.contextmanager
 def local_db_context():
-    _check_init_db()
+    _check_init_db()  # FIXME avoid 2 opens
     with local_db.open('r+b') as f:
         db = pickle.load(f)
         yield db

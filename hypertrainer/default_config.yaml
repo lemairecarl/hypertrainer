@@ -1,0 +1,4 @@
+ht_platform:
+  redis_port: 6380
+  worker_hostnames:
+    - localhost

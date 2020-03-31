@@ -11,13 +11,15 @@ from rq.worker import StopRequested
 
 # Preload libraries
 # TODO import library_that_you_want_preloaded
+from hypertrainer.utils import config_context
 
 
 class WorkerContext:
     def __init__(self, hostname, num_workers=1):
         self.hostname = hostname if hostname is not None else socket.gethostname()
-        redis_port = 6380  # FIXME config
-        self.redis_conn = Redis(port=redis_port)
+        with config_context() as config:
+            redis_port = config['ht_platform']['redis_port']
+            self.redis_conn = Redis(port=redis_port)
         self.conn = Connection(self.redis_conn)
 
         self.worker_processes: List[Process] = []
