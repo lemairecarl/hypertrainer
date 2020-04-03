@@ -14,6 +14,9 @@ from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_jo
 from hypertrainer.utils import TaskStatus, get_python_env_command, config_context
 
 
+ConnectionError = redis.exceptions.ConnectionError
+
+
 def check_connection(redis_conn):
     try:
         redis_conn.ping()

@@ -10,7 +10,7 @@ from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.db import init_db
 from hypertrainer.hpsearch import generate as generate_hpsearch
-from hypertrainer.htplatform import HtPlatform
+from hypertrainer.htplatform import HtPlatform, ConnectionError
 from hypertrainer.localplatform import LocalPlatform
 from hypertrainer.task import Task
 from hypertrainer.utils import yaml, print_yaml, TaskStatus, TestState
@@ -32,7 +32,11 @@ class ExperimentManager:
             ComputePlatformType.LOCAL: LocalPlatform()
         }
         if not TestState.test_mode:
-            self.platform_instances[ComputePlatformType.HT] = HtPlatform()
+            try:
+                ht_platform = HtPlatform()
+                self.platform_instances[ComputePlatformType.HT] = ht_platform
+            except ConnectionError:
+                print('WARNING: Could not instantiate HtPlatform. Is redis-server running?')
 
     def get_tasks(self, platform: Optional[ComputePlatformType] = None,
                   proj: Optional[str] = None,
