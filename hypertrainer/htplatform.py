@@ -132,20 +132,3 @@ def wait_for_results(rq_jobs: Iterable[Job], interval_secs=1, tries=4, raise_exc
         raise TimeoutError
     # noinspection PyUnboundLocalVariable
     return results
-
-
-if __name__ == '__main__':
-    import argparse
-    ap = argparse.ArgumentParser()
-    ap.add_argument('mode', choices=['test'])
-    ap.add_argument('--queue', type=str, default='jobs')
-    ap.add_argument('--msg', type=str, default='ping!')
-    args = ap.parse_args()
-
-    assert args.mode == 'test'
-
-    with config_context() as config:
-        redis_port = config['ht_platform']['redis_port']
-    redis_conn = Redis(port=redis_port)
-    queue = Queue(name=args.queue, connection=redis_conn)
-    job = queue.enqueue(test_job, args=(args.msg,))
