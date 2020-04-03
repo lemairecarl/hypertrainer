@@ -234,7 +234,6 @@ class TestRq:
         # Check that the task finishes successfully
         wait_task_finished(task_id, interval_secs=2, tries=6)
 
-    @pytest.mark.xfail
     def test_submit_multiple(self, ht_platform):
         # Submit rq task
         tasks = experiment_manager.create_tasks(
@@ -281,7 +280,6 @@ class TestRq:
         worker_db = info_dicts[0]
         assert task.job_id not in worker_db
 
-    @pytest.mark.xfail
     def test_cancel(self, ht_platform):
         tasks = experiment_manager.create_tasks(
             config_file=str(scripts_path / 'test_long.yaml'),
