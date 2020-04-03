@@ -3,10 +3,10 @@ import fcntl
 import os
 import sys
 import time
+from pathlib import Path
 from enum import Enum
 from functools import reduce
 from itertools import chain
-from pathlib import Path
 from typing import Iterable, List, Dict
 from uuid import UUID
 
@@ -133,13 +133,23 @@ def get_python_env_command(project_path: Path, platform: str) -> List[str]:
         return default_interpreter
 
     env_config = env_configs[platform]
+    path = os.path.expanduser(env_config['path'])
     if env_config['conda']:
         if 'path' in env_config:
-            return [env_config['conda_bin'], 'run', '-p', env_config['path'], 'python']
+            return [env_config['conda_bin'], 'run', '-p', path, 'python']
         else:
             return [env_config['conda_bin'], 'run', '-n', env_config['name'], 'python']
     else:
-        return [env_config['path'] + '/bin/python']
+        return [path + '/bin/python']
+
+
+def make_path(*args) -> Path:
+    """Shortcut to create a Path and expanduser on it.
+
+    This will replace '~' by the absolute path to the home directory.
+    """
+
+    return Path(*args).expanduser()
 
 
 class LockedError(Exception):

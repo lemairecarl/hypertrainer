@@ -7,7 +7,7 @@ from peewee import CharField, IntegerField, FloatField, Field, BooleanField, UUI
 
 from hypertrainer.computeplatformtype import ComputePlatformType
 from hypertrainer.db import BaseModel, EnumField, YamlField
-from hypertrainer.utils import TaskStatus, set_item_at_path, get_item_at_path, yaml_to_str, parse_columns
+from hypertrainer.utils import TaskStatus, get_item_at_path, yaml_to_str, parse_columns, make_path
 
 
 class Task(BaseModel):
@@ -67,9 +67,10 @@ class Task(BaseModel):
     @property
     def output_root(self) -> str:
         if self._output_root is None:
-            self._output_root = self.config['output_root']
-            if not Path(self._output_root).is_absolute():
+            output_root_path = make_path(self.config['output_root'])
+            if not output_root_path.is_absolute():
                 raise Exception('output_root path must be absolute')
+            self._output_root = str(output_root_path)
         return self._output_root
 
     @property
