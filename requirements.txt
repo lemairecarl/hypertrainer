@@ -6,3 +6,6 @@ ruamel.yaml
 peewee
 pandas
 rq
+IPython
+termcolor
+tabulate
