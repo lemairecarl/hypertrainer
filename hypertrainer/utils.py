@@ -21,7 +21,10 @@ class TestState:
 yaml = YAML()
 yaml.representer.add_representer(UUID, lambda dumper, uuid: dumper.represent_data(str(uuid)))
 yaml.representer.add_multi_representer(Enum, lambda dumper, enum: dumper.represent_data(str(enum)))
+
 hypertrainer_home = Path.home() / 'hypertrainer'
+if not hypertrainer_home.exists():
+    hypertrainer_home.mkdir()
 
 
 def get_item_at_path(obj, path, sep='.', default=KeyError):
