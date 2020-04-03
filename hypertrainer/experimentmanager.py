@@ -209,7 +209,7 @@ class ExperimentManager:
 
         tasks = self.get_tasks(descending_order=False, **kwargs)
         table = [[t.id,
-                  t.uuid,
+                  str(t.uuid).split('-')[0],  # Only show the first part of the UUID
                   t.platform_type.abbrev,
                   t.hostname,
                   t.name,
