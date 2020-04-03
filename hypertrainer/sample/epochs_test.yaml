@@ -1,5 +1,5 @@
 script: dummy.py
-output_root: /home/carl/hypertrainer/output
+output_root: ~/hypertrainer/output
 n_iter: 20
 secs_per_iter: 1
 # die_after: 7

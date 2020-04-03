@@ -1,2 +1,2 @@
 script: script_test_simple.py
-output_root: /home/carl/hypertrainer/output
+output_root: ~/hypertrainer/output
