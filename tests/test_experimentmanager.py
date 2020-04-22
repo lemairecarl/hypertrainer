@@ -199,14 +199,13 @@ class TestLocal:
 def ht_platform():
     _ht_platform = HtPlatform()
     experiment_manager.platform_instances[ComputePlatformType.HT] = _ht_platform
-    answers = []
     try:
         answers = _ht_platform.ping_workers()
     except (ConnectionError, ConnectionRefusedError):
         raise Exception('Could not connect to Redis. Make sure redis-server is running.')
     except TimeoutError:
-        if len(answers) == 0 or all(a is None for a in answers):
-            raise Exception('The ping timed out. There must be at least one reachable worker.')
+        raise Exception('The ping timed out. A worker must listen queue \'localhost\'')
+    assert answers == ['localhost']
     return _ht_platform
 
 
