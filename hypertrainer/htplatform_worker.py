@@ -55,7 +55,7 @@ def run(
         # Write into to local db
         job_id = get_current_job().id
         with local_db_context() as db:
-            assert job_id not in db, 'Something has gone terribly wrong.'
+            assert job_id not in db, 'Job id already exists in worker db.'
             db[job_id] = {'pid': p.pid, 'status': TaskStatus.Unknown.value}
 
         # Monitor the job

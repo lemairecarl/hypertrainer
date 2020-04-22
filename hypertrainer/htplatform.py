@@ -9,7 +9,7 @@ from rq.job import Job, cancel_job as cancel_rq_job
 
 from hypertrainer.computeplatform import ComputePlatform
 from hypertrainer.computeplatformtype import ComputePlatformType
-from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, test_job, ping, raise_exception, delete_job, \
+from hypertrainer.htplatform_worker import run, get_jobs_info, get_logs, ping, raise_exception, delete_job, \
     cancel_job
 from hypertrainer.utils import TaskStatus, get_python_env_command, config_context
 
@@ -67,7 +67,11 @@ class HtPlatform(ComputePlatform):
 
     def cancel(self, task):
         cancel_rq_job(task.job_id, connection=self.redis_conn)  # This ensures the job will not start
-        cancel_job(task.job_id)
+
+        if task.hostname == '':
+            print(f'Cannot send cancellation for {task.uuid}: no assigned worker hostname')
+        else:
+            self.worker_queues[task.hostname].enqueue(cancel_job, args=(task.job_id,), ttl=4)
 
     def update_tasks(self, tasks):
         # TODO only check requested ids
@@ -92,8 +96,8 @@ class HtPlatform(ComputePlatform):
     def delete(self, task):
         if task.hostname == '':
             print(f'Cannot perform worker deletion for {task.uuid}: no assigned worker hostname')
-            return
-        self.worker_queues[task.hostname].enqueue(delete_job, args=(task.job_id, task.output_path), ttl=4)
+        else:
+            self.worker_queues[task.hostname].enqueue(delete_job, args=(task.job_id, task.output_path), ttl=4)
 
     def _get_info_dict_for_each_worker(self):
         rq_jobs = [q.enqueue(get_jobs_info, ttl=2, result_ttl=2) for q in self.worker_queues.values()]
