@@ -213,6 +213,43 @@ class TestLocal:
 
         wait_true(check_cancelled)
 
+    def test_tags(self):
+        # Add tags while submitting
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'test_simple.yaml'),
+            platform='local',
+            tags='mytag1,mytag2')
+        task1_id = tasks[0].id
+
+        # Add tags in yaml config
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'test_tags.yaml'),
+            platform='local')
+        task2_id = tasks[0].id
+
+        # Check presence of tags
+        assert Task.get(Task.id == task1_id).tags == 'mytag1,mytag2'
+        assert Task.get(Task.id == task2_id).tags == 'mytag3,mytag4'
+
+        # Filter by tags
+        tasks = experiment_manager.get_tasks(tags=['mytag2'], platform=ComputePlatformType.LOCAL)
+        task_ids = [t.id for t in tasks]
+        assert task1_id in task_ids
+        assert task2_id not in task_ids
+
+        tasks = experiment_manager.get_tasks(tags=['mytag2', 'mytag1'], platform=ComputePlatformType.LOCAL)
+        task_ids = [t.id for t in tasks]
+        assert task1_id in task_ids
+        assert task2_id not in task_ids
+
+        tasks = experiment_manager.get_tasks(tags=['mytag4'], platform=ComputePlatformType.LOCAL)
+        task_ids = [t.id for t in tasks]
+        assert task1_id not in task_ids
+        assert task2_id in task_ids
+
+        tasks = experiment_manager.get_tasks(tags=['mytag1', 'mytag3'], platform=ComputePlatformType.LOCAL)
+        assert len(tasks) == 0
+
 
 @pytest.fixture
 def ht_platform():

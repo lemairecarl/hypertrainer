@@ -42,6 +42,7 @@ class ExperimentManager:
                   proj: Optional[str] = None,
                   archived=False,
                   descending_order=True,
+                  tags: Optional[List[str]] = None
                   ) -> List[Task]:
         # TODO rename this function? Maybe get_filtered_tasks?
 
@@ -49,13 +50,15 @@ class ExperimentManager:
         p_list = [platform] if platform is not None else None
         self.update_tasks(platforms=p_list)  # TODO return tasks to avoid other db query?
 
-        # Get the records
-        if platform is None:
-            q = Task.select().where(Task.is_archived == archived)
-        else:
-            q = Task.select().where((Task.platform_type == platform) & (Task.is_archived == archived))
+        # Build the query
+        q = Task.select().where(Task.is_archived == archived)
+        if platform is not None:
+            q = q.where(Task.platform_type == platform)
         if proj is not None:
             q = q.where(Task.project == proj)
+        if tags is not None:
+            for t in tags:
+                q = q.where(Task.tags.contains(t))
         if descending_order:
             q = q.order_by(Task.id.desc())
         tasks = list(q)
@@ -80,8 +83,11 @@ class ExperimentManager:
             platform.update_tasks(tasks)
             Task.bulk_update(tasks, Task.get_fields())  # FIXME updating all records everytime is heavy
 
-    def create_tasks(self, platform: str, config_file: str, project: str = ''):
-        """Create and submit tasks to the specified platform according to the config yaml file"""
+    def create_tasks(self, platform: str, config_file: str, project: str = '', tags: str = ''):
+        """Create and submit tasks to the specified platform according to the config yaml file
+
+        Parameter `tags` is a comma-separated list of tags.
+        """
 
         # Load yaml config
         config_file_path = Path(config_file)
@@ -103,6 +109,7 @@ class ExperimentManager:
                      name=name,
                      platform_type=ptype,
                      project=project,
+                     tags=Task.join_tags(tags, config.get('tags', '')),
                      status=TaskStatus.Waiting)
             t.save()  # insert in database
             tasks.append(t)
@@ -213,7 +220,10 @@ class ExperimentManager:
             return list(self.platform_instances.keys())
 
     def print_tasks(self, **kwargs):
-        """Print a table of the non-archived tasks"""
+        """Print a table of the non-archived tasks.
+
+        kwargs are passed to ExperimentManager.get_tasks().
+        """
 
         tasks = self.get_tasks(descending_order=False, **kwargs)
         table = [[t.id,

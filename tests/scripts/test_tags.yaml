@@ -1,0 +1,3 @@
+script: script_test_simple.py
+output_root: ~/hypertrainer/output
+tags: mytag3,mytag4

@@ -25,6 +25,7 @@ class Task(BaseModel):
     iter_per_epoch = IntegerField(default=0)
     epoch_duration = FloatField(default=0)
     is_archived = BooleanField(default=False)
+    tags = CharField(default='')
 
     _fields = None
 
@@ -162,3 +163,10 @@ class Task(BaseModel):
 
     def dump_config(self):
         return yaml_to_str(self.config)
+
+    @staticmethod
+    def join_tags(tags_str1, tags_str2):
+        split_tags = tags_str1.strip().split(',')
+        split_tags += tags_str2.strip().split(',')
+        split_tags = [t.strip() for t in split_tags if t != '']
+        return ','.join(split_tags)
