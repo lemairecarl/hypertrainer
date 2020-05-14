@@ -29,21 +29,32 @@ def index():
             flash('Cancelled task(s) {}.'.format(', '.join(task_ids)))
         elif a == 'Archive':
             em.archive_tasks_by_id(task_ids)
+        elif a == 'Unarchive':
+            em.unarchive_tasks_by_id(task_ids)
         elif a == 'Delete':
             em.delete_tasks_by_id(task_ids)
         elif a == 'Resume':
             em.resume_tasks(em.get_tasks_by_id(task_ids))
             flash('Resubmitted task(s) {}.'.format(', '.join(task_ids)))
+        else:
+            raise NotImplementedError
     elif action == 'chooseproject':
         session['project'] = request.args.get('p')
+    elif action == 'show_archived':
+        session['show_archived'] = 1
+    elif action == 'hide_archived':
+        session.pop('show_archived', None)
     elif action is None:
         pass
     else:
-        flash('ERROR: Unrecognized action!', 'error')
+        raise NotImplementedError
+
+    show_archived = 'show_archived' in session
     return render_template('index.html',
-                           tasks=em.get_tasks(proj=session.get('project')),
+                           tasks=em.get_tasks(proj=session.get('project'), archived=show_archived),
                            platforms=em.list_platforms(as_str=True), projects=em.list_projects(),
-                           cur_proj=session.get('project'))
+                           cur_proj=session.get('project'),
+                           show_archived=show_archived)
 
 
 @bp.route('/monitor/<task_id>')

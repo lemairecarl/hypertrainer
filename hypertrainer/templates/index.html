@@ -111,21 +111,53 @@
     {% endif %}
   {% endwith %}
 
+  <!-- Row of buttons -->
   <form action="/?action=bulk" method="post" id="bulk">
     <p>
       <a href="/" class="ui compact button basic">Refresh</a>
-      <button type="button" class="ui compact button" id="new-task">New</button>
-      <button type="submit" class="ui compact button disabled" name="action" value="Resume">Resume</button>
-      <button type="submit" class="ui compact button disabled" name="action" value="Cancel">Cancel</button>
-      <button type="submit" class="ui compact button disabled" name="action" value="Archive">Archive</button>
-      <!--<button type="submit" class="ui compact button disabled" name="action" value="Delete">Delete</button>-->
+      {% if not show_archived %}
+        <button type="button" class="ui compact button" id="new-task">New</button>
+        <button type="submit" class="ui compact button disabled" name="action" value="Resume">Resume</button>
+        <button type="submit" class="ui compact button disabled" name="action" value="Cancel">Cancel</button>
+        <button type="submit" class="ui compact button disabled" name="action" value="Archive">Archive</button>
+      {% else %}
+        <button type="submit" class="ui compact button disabled" name="action" value="Unarchive">Unarchive</button>
+        <button type="button" class="negative ui compact button disabled" id="delete-task">Delete</button>
+        <button type="submit" name="action" value="Delete" style="display: none" id="submit-delete"></button>
+      {% endif %}
       <span class="ui icon mini input" id="search-box">
         <input type="text" placeholder="Filter...">
         <i class="search icon"></i>
       </span>
-      <a href="https://github.com/lemairecarl/hypertrainer/wiki" target="_blank" style="margin-left: 10px;">Help</a>
+      {% if not show_archived %}
+        <a href="/?action=show_archived" style="margin-left: 20px;">Show archived tasks</a>
+      {% else %}
+        <a href="/?action=hide_archived" style="margin-left: 20px;">Hide archived tasks</a>
+      {% endif %}
+      <a href="https://github.com/lemairecarl/hypertrainer/wiki" target="_blank" style="margin-left: 20px;">Help</a>
     </p>
 
+    <!-- Message reminded archived tasks only are shown -->
+    <div class="ui info message {{ '' if show_archived else 'hidden' }}">
+      <div class="header">
+        Currently showing archived tasks.
+      </div>
+      Other tasks are hidden. <a href="/?action=hide_archived" style="margin-left: 10px;">Back to main list</a>
+    </div>
+
+    <!-- Dialog: Delete confirmation -->
+    <div class="ui modal" id="delete-dialog">
+      <div class="header">Heads up!</div>
+      <div class="content">
+        <p>Are you sure you want to delete one or more tasks? <strong>This cannot be undone!</strong></p>
+      </div>
+      <div class="actions">
+        <div class="ui cancel button" tabindex="0">Cancel</div>
+        <div class="negative ui approve button">Delete</div>
+      </div>
+    </div>
+
+    <!-- Tasks list -->
     <div id="table-container">
       <table class="ui sortable celled compact table" id="tasks">
         <thead>

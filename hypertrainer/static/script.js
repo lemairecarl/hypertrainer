@@ -82,6 +82,13 @@ $( document ).ready(function() {
             }
         }).modal('show');
     });
+    $('button#delete-task').click(function() {
+        $('#delete-dialog').modal({
+            onApprove : function() {
+              $('button#submit-delete').click();
+            }
+        }).modal('show');
+    });
     $('table').tablesort();
     $('thead th.number').data(
         'sortBy',
