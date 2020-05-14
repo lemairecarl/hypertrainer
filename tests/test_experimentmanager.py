@@ -127,7 +127,7 @@ class TestLocal:
     def test_archive(self):
         # 1. Submit local task
         tasks = experiment_manager.create_tasks(
-            config_file=str(scripts_path / 'test_hp.yaml'),
+            config_file=str(scripts_path / 'test_simple.yaml'),
             platform='local')
         task_id = tasks[0].id
 
@@ -152,7 +152,7 @@ class TestLocal:
     def test_unarchive(self):
         # Submit local task
         tasks = experiment_manager.create_tasks(
-            config_file=str(scripts_path / 'test_hp.yaml'),
+            config_file=str(scripts_path / 'test_simple.yaml'),
             platform='local')
         task_id = tasks[0].id
 
@@ -179,7 +179,7 @@ class TestLocal:
 
         # 1. Submit task
         tasks = experiment_manager.create_tasks(
-            config_file=str(scripts_path / 'test_hp.yaml'),
+            config_file=str(scripts_path / 'test_simple.yaml'),
             platform='local')
         task_id = tasks[0].id
         # 1.1 Wait that the folder exist on disk
