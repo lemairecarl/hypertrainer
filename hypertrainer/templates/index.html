@@ -32,10 +32,14 @@
   <div class="header">Submit new task</div>
   <div class="content">
     <form action="/act?action=submit" method="post" class="ui form" id="form-new-task">
-      <div class="one field">
+      <div class="two fields">
         <div class="field">
           <label for="config">Config</label>
           <input name="config" id="config" value="../sample/plot_test.yaml">
+        </div>
+        <div class="field">
+          <label for="tags">Tags</label>
+          <input name="tags" id="tags" value="">
         </div>
       </div>
       <div class="two fields">
@@ -170,6 +174,7 @@
           <th>Platform</th>
           <th>Host</th>
           <th>Name</th>
+          <th>Tags</th>
           <th>Status</th>
           <th>Epoch</th>
           <th>Iteration</th>
@@ -189,6 +194,7 @@
               <td data-col="platform">{{ task.platform_type.value }}</td>
               <td>{{ task.hostname }}</td>
               <td>{{ task.name }}</td>
+              <td>{{ task.tags }}</td>
               <td data-col="status" class="{{ 'updating' if task.status.is_active else task.status.value }}">
                 {{ task.status.value }}
               </td>

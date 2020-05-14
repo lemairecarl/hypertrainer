@@ -107,7 +107,8 @@ def submit():
     platform = request.form['platform']
     config_file = request.form['config']
     project = request.form['project']
-    em.create_tasks(platform, config_file, project=project)
+    tags = request.form['tags']
+    em.create_tasks(platform, config_file, project=project, tags=tags)
     flash('Submitted "{}" on {}.'.format(config_file, platform), 'success')
     return redirect(url_for('index'))
 
