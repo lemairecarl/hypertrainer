@@ -88,6 +88,10 @@ class Task(BaseModel):
     def num_epochs(self):
         return get_item_at_path(self.config, 'training.num_epochs', default=-1)
 
+    @property
+    def short_uuid(self):
+        return str(self.uuid).split('-')[0]
+
     def post_submit(self):
         """Called after submit event"""
         self.save()
