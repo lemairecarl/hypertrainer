@@ -167,6 +167,14 @@ class ExperimentManager:
 
         Task.update(is_archived=True).where(Task.id.in_(task_ids)).execute()
 
+    def unarchive_tasks_by_id(self, task_ids: List[int]):
+        """Unarchive the tasks
+
+        Put the tasks from the archive back into the main list
+        """
+
+        Task.update(is_archived=False).where(Task.id.in_(task_ids)).execute()
+
     def delete_tasks_by_id(self, task_ids: List[int]):
         """Delete all traces of the tasks
 

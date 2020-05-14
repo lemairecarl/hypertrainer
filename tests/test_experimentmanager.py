@@ -154,6 +154,31 @@ class TestLocal:
         assert task_id in [t.id for t in archived_tasks]
 
 
+    def test_unarchive(self):
+        # Submit local task
+        tasks = experiment_manager.create_tasks(
+            config_file=str(scripts_path / 'test_hp.yaml'),
+            platform='local')
+        task_id = tasks[0].id
+
+        # Archive task
+        experiment_manager.archive_tasks_by_id([task_id])
+
+        # Unarchive task
+        experiment_manager.unarchive_tasks_by_id([task_id])
+
+        # Check that is_archived == False
+        assert not Task.get(Task.id == task_id).is_archived
+
+        # Check that it is present in the non-archived list
+        non_archived_tasks = experiment_manager.get_tasks(platform=ComputePlatformType.LOCAL)
+        assert task_id in [t.id for t in non_archived_tasks]
+
+        # Check that it is absent from the archived list
+        archived_tasks = experiment_manager.get_tasks(archived=True, platform=ComputePlatformType.LOCAL)
+        assert task_id not in [t.id for t in archived_tasks]
+
+
     def test_delete(self):
         def get_task_folder(task_id):
             return Path(Task.get(Task.id == task_id).output_path)
