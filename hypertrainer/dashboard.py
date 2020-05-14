@@ -13,8 +13,18 @@ from hypertrainer.utils import get_item_at_path
 bp = Blueprint('dashboard', __name__)
 
 
-@bp.route('/', methods=['GET', 'POST'])
+@bp.route('/')
 def index():
+    show_archived = 'show_archived' in session
+    return render_template('index.html',
+                           tasks=em.get_tasks(proj=session.get('project'), archived=show_archived),
+                           platforms=em.list_platforms(as_str=True), projects=em.list_projects(),
+                           cur_proj=session.get('project'),
+                           show_archived=show_archived)
+
+
+@bp.route('/act', methods=['GET', 'POST'])
+def perform_action():
     action = request.args.get('action')
     if action == 'submit':
         return submit()
@@ -49,12 +59,7 @@ def index():
     else:
         raise NotImplementedError
 
-    show_archived = 'show_archived' in session
-    return render_template('index.html',
-                           tasks=em.get_tasks(proj=session.get('project'), archived=show_archived),
-                           platforms=em.list_platforms(as_str=True), projects=em.list_projects(),
-                           cur_proj=session.get('project'),
-                           show_archived=show_archived)
+    return redirect(url_for('index'))
 
 
 @bp.route('/monitor/<task_id>')

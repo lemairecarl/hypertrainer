@@ -31,7 +31,7 @@
 <div class="ui modal" id="submit-dialog">
   <div class="header">Submit new task</div>
   <div class="content">
-    <form action="/?action=submit" method="post" class="ui form" id="form-new-task">
+    <form action="/act?action=submit" method="post" class="ui form" id="form-new-task">
       <div class="one field">
         <div class="field">
           <label for="config">Config</label>
@@ -112,7 +112,7 @@
   {% endwith %}
 
   <!-- Row of buttons -->
-  <form action="/?action=bulk" method="post" id="bulk">
+  <form action="/act?action=bulk" method="post" id="bulk">
     <p>
       <a href="/" class="ui compact button basic">Refresh</a>
       {% if not show_archived %}
@@ -130,9 +130,9 @@
         <i class="search icon"></i>
       </span>
       {% if not show_archived %}
-        <a href="/?action=show_archived" style="margin-left: 20px;">Show archived tasks</a>
+        <a href="/act?action=show_archived" style="margin-left: 20px;">Show archived tasks</a>
       {% else %}
-        <a href="/?action=hide_archived" style="margin-left: 20px;">Hide archived tasks</a>
+        <a href="/act?action=hide_archived" style="margin-left: 20px;">Hide archived tasks</a>
       {% endif %}
       <a href="https://github.com/lemairecarl/hypertrainer/wiki" target="_blank" style="margin-left: 20px;">Help</a>
     </p>
@@ -142,7 +142,7 @@
       <div class="header">
         Currently showing archived tasks.
       </div>
-      Other tasks are hidden. <a href="/?action=hide_archived" style="margin-left: 10px;">Back to main list</a>
+      Other tasks are hidden. <a href="/act?action=hide_archived" style="margin-left: 10px;">Back to main list</a>
     </div>
 
     <!-- Dialog: Delete confirmation -->
