@@ -16,7 +16,6 @@ from hypertrainer.task import Task
 
 scripts_path = Path(__file__).parent / 'scripts'
 
-
 # Make sure we will work on a separate, empty test database
 assert Task.select().count() == 0, 'Must work on empty test db'
 
@@ -50,7 +49,6 @@ class TestLocal:
 
         assert Path(output_path).exists()
 
-
     def test_other_cwd(self):
         """Test that experiment_manager works independently from working dir"""
 
@@ -72,7 +70,6 @@ class TestLocal:
         assert Path(task.output_path).exists()
 
         os.chdir(old_cwd)
-
 
     def test_submit(self):
         # 1. Launch task
@@ -127,7 +124,6 @@ class TestLocal:
             assert 2 ** -2 <= p_exp2 <= 2 ** 2
             assert -2 <= p_lin <= 2
 
-
     def test_archive(self):
         # 1. Submit local task
         tasks = experiment_manager.create_tasks(
@@ -153,7 +149,6 @@ class TestLocal:
         archived_tasks = experiment_manager.get_tasks(archived=True, platform=ComputePlatformType.LOCAL)
         assert task_id in [t.id for t in archived_tasks]
 
-
     def test_unarchive(self):
         # Submit local task
         tasks = experiment_manager.create_tasks(
@@ -177,7 +172,6 @@ class TestLocal:
         # Check that it is absent from the archived list
         archived_tasks = experiment_manager.get_tasks(archived=True, platform=ComputePlatformType.LOCAL)
         assert task_id not in [t.id for t in archived_tasks]
-
 
     def test_delete(self):
         def get_task_folder(task_id):
@@ -316,6 +310,7 @@ class TestRq:
             experiment_manager.update_tasks([ComputePlatformType.HT])
             t = experiment_manager.get_tasks_by_id([task_id])[0]
             return t.status == TaskStatus.Running
+
         wait_true(check_running)
 
         experiment_manager.cancel_tasks_by_id([task_id])
@@ -325,6 +320,7 @@ class TestRq:
             experiment_manager.update_tasks([ComputePlatformType.HT])
             t = experiment_manager.get_tasks_by_id([task_id])[0]
             return t.status == TaskStatus.Cancelled
+
         wait_true(check_cancelled)
 
     def test_acquire_one_gpu(self, monkeypatch, ht_platform_same_thread):
