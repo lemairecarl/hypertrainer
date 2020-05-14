@@ -231,6 +231,7 @@ class ExperimentManager:
                   t.platform_type.abbrev,
                   t.hostname,
                   t.name,
+                  t.tags,
                   t.status.abbrev] for t in tasks]
         headers = [
             'ID',
@@ -238,6 +239,7 @@ class ExperimentManager:
             'Platf',
             'Hostname',
             'Name',
+            'Tags',
             'Stat'
         ]
         print(tabulate(table, headers=headers))
