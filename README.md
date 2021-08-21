@@ -13,9 +13,6 @@ HyperTrainer is a machine learning experiment manager and dashboard. Features:
 HyperTrainer is compatible with Python scripts that accept a single YAML as input,
 instead of command-line args.
 
-Trello board:
-https://trello.com/b/C1VCfrSW/rncan-experiment-manager
-
 ## Setup
 
 See [Installing](https://github.com/lemairecarl/hypertrainer/wiki/Installing) in the wiki.
