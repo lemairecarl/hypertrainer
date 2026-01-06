@@ -1,6 +1,6 @@
 pytest
 numpy
-bokeh==2.0.1  # to match the js and css files in /static
+bokeh==3.8.2  # to match the js and css files in /static
 flask>=1.0.0
 ruamel.yaml
 peewee
