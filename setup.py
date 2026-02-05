@@ -9,7 +9,7 @@ setup(
     install_requires=[
         'pytest',
         'numpy',
-        'bokeh==2.0.1',
+        'bokeh==3.8.2',
         'flask>=1.0.0',
         'ruamel.yaml',
         'peewee',
